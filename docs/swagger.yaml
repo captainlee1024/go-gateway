@@ -1,0 +1,181 @@
+basePath: /
+definitions:
+  dto.AdminInfoOutput:
+    properties:
+      avatar:
+        description: 登录用户头像
+        type: string
+      id:
+        description: 管理员 ID
+        type: integer
+      introduction:
+        description: 介绍
+        type: string
+      login_time:
+        description: 登录时间
+        type: string
+      roles:
+        description: .
+        items:
+          type: string
+        type: array
+      user_name:
+        description: 登录管理员姓名
+        type: string
+    type: object
+  dto.AdminLoginInput:
+    properties:
+      password:
+        description: 密码
+        example: "123456"
+        type: string
+      username:
+        description: 管理员账户
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.AdminLoginOutput:
+    properties:
+      token:
+        description: 用户 token
+        type: string
+    type: object
+  dto.ChangePwdInput:
+    properties:
+      password:
+        description: 新密码
+        example: "123456"
+        type: string
+    required:
+    - password
+    type: object
+  middleware.Response:
+    properties:
+      data:
+        description: 数据信息
+        type: object
+      errmsg:
+        description: 错误信息
+        type: string
+      errno:
+        description: 错误码
+        type: integer
+      stack:
+        description: 错误堆栈信息
+        type: object
+      trace_id:
+        description: 日志 traceID
+        type: object
+    type: object
+host: 127.0.0.1:8080
+info:
+  contact:
+    email: 644052732@qq.com
+    name: CaptainLee1024
+    url: http://blog.leecoding.club
+  description: Go-Gateway 是基于 Go 语言实现的网关！
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Go-Gateway
+  version: "1.0"
+paths:
+  /admin/admin_info:
+    get:
+      consumes:
+      - application/json
+      description: 从登陆的 Session 中获取管理员信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AdminInfoOutput'
+              type: object
+      summary: 管理员信息
+      tags:
+      - 管理员接口
+  /admin/change_pwd:
+    post:
+      consumes:
+      - application/json
+      description: 修改已登录账户的密码
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePwdInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 修改密码
+      tags:
+      - 管理员接口
+  /admin_login/login:
+    post:
+      consumes:
+      - application/json
+      description: 管理员登录
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AdminLoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AdminLoginOutput'
+              type: object
+      summary: 管理员登录
+      tags:
+      - 管理员接口
+  /admin_login/logout:
+    get:
+      consumes:
+      - application/json
+      description: 管理员退出
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 管理员退出
+      tags:
+      - 管理员接口
+swagger: "2.0"

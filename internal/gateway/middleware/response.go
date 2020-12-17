@@ -15,11 +15,11 @@ import (
 
 // Response 响应结构体
 type Response struct {
-	ErrorCode ResponseCode `json:"errno"`
-	ErrorMsg  string       `json:"errmsg"`
-	Data      interface{}  `json:"data"`
-	TraceID   interface{}  `json:"trace_id"`
-	Stack     interface{}  `json:"stack"`
+	ErrorCode ResponseCode `json:"errno"`    // 错误码
+	ErrorMsg  string       `json:"errmsg"`   // 错误信息
+	Data      interface{}  `json:"data"`     // 数据信息
+	TraceID   interface{}  `json:"trace_id"` // 日志 traceID
+	Stack     interface{}  `json:"stack"`    // 错误堆栈信息
 }
 
 // ResponseSuccess 成功时返回

@@ -34,7 +34,11 @@ type BaseConfig struct {
 	MachineID    int64  `mapstructure:"machine_id"`
 	Port         int    `mapstructure:"port"`
 
-	*LogConfig `mapstructure:"log"`
+	*LogConfig     `mapstructure:"log"`
+	*HttpConfig    `mapstructure:"http"`
+	*SessionConfig `mapstructure:"session"`
+	*SwagConfig    `mapstructure:"swagger"`
+	*ClusterConfig `mapstructure:"cluster"`
 }
 
 // LogConfig Zap 配置信息
@@ -44,6 +48,34 @@ type LogConfig struct {
 	MaxSize    int    `mapstructure:"max_size"`
 	MaxAge     int    `mapstructure:"max_age"`
 	MaxBackups int    `mapstructure:"max_backup"`
+}
+
+// HttpConfig 是项目服务参数信息
+type HttpConfig struct {
+	ReadTime       int      `mapstructure:"read_time"`
+	WriteTime      int      `mapstructure:"write_time"`
+	MaxHeaderBytes int      `mapstructure:"max_header_bytes"`
+	AllowIP        []string `mapstructure:"allow_ip"`
+}
+
+// SessionConfig 是 session 存储配置信息
+type SessionConfig struct {
+	RedisServer   string `mapstructure:"redis_server"`
+	RedisPassword string `mapstructure:"redis_password"`
+}
+
+// SwagConfig 是 swagger 文档配置信息
+type SwagConfig struct {
+	Title    string `mapstructure:"title"`
+	Describe string `mapstructure:"desc"`
+	Host     string `mapstructure:"host"`
+	BasePath string `mapstructure:"base_path"`
+}
+
+type ClusterConfig struct {
+	ClusterIP      string `mapstructure:"cluster_ip"`
+	ClusterPost    string `mapstructure:"cluster_port"`
+	ClusterSslPort string `mapstructure:"cluster_ssl_port"`
 }
 
 // MySQLMapConfig 数据库列表

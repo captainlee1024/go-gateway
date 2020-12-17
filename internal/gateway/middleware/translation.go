@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"reflect"
-
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
+	"reflect"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
@@ -46,24 +46,55 @@ func TranslationMiddleware() gin.HandlerFunc {
 				return fld.Tag.Get("comment")
 			})
 
-			// 自定义验证方法
-			val.RegisterValidation("tag string", func(fl validator.FieldLevel) bool {
-				return fl.Field().String() == "admin"
-			})
+			// 自定义校验和翻译的方法
+			// 1. 自定义验证方法
+			// 2. 自定义翻译器
+			usernameValid(val, trans)
+			passwordValid(val, trans)
 
-			// 自定义验证器
-			val.RegisterTranslation("is-validuer", trans,
-				func(ut ut.Translator) error {
-					return ut.Add("is-validuser", "{0}填写不正确", true)
-				},
-				func(ut ut.Translator, fe validator.FieldError) string {
-					t, _ := ut.T("is-validuser", fe.Field())
-					return t
-				})
 			break
 		}
 		c.Set(public.CtxTranslatorKey, trans)
 		c.Set(public.CtxValidatorKey, val)
 		c.Next()
 	}
+}
+
+// 管理员 username 校验和翻译
+func usernameValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	// 管理员登录 username 必须为 admin
+	val.RegisterValidation("valid_username", func(fl validator.FieldLevel) bool {
+		return fl.Field().String() == "admin"
+	})
+	// 自定义翻译器
+	// username 验证错误的提示
+	val.RegisterTranslation("valid_username", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_username", "{0}输入错误", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_username", fe.Field())
+			return t
+		})
+}
+
+// 管理员登录 password 格式校验
+func passwordValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	// 密码只能包含 字母、数字、下划线
+	val.RegisterValidation("valid_password", func(fl validator.FieldLevel) bool {
+		matched, _ := regexp.Match(`^[a-zA-Z0-9_]+$`, []byte(fl.Field().String()))
+		return matched
+	})
+	// 自定义翻译器
+	// 密码验证错误的提示
+	val.RegisterTranslation("valid_password", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_password", "{0}只能包含数字、字母和下划线", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_password", fe.Field())
+			return t
+		})
 }

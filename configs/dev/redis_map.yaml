@@ -6,3 +6,9 @@ list:
     password: "644315"
     db: 1
     pool_size: 100
+  redis2:
+    host: "127.0.0.1"
+    port: 6379
+    password: "644315"
+    db: 2
+    pool_size: 100

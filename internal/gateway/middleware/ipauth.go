@@ -12,7 +12,8 @@ func IPAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		isMatched := false
 		// fmt.Printf("\n\n\n%v\n\n\n", settings.GetStringSliceConf("base.http.allow_ip"))
-		for _, host := range settings.GetStringSliceConf("base.http.allow_ip") {
+		//for _, host := range settings.GetStringSliceConf("base.http.allow_ip") {
+		for _, host := range settings.ConfBase.HttpConfig.AllowIP {
 			if c.ClientIP() == host {
 				isMatched = true
 			}

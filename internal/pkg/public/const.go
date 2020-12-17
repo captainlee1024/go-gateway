@@ -14,7 +14,8 @@ const (
 // Context 之外的其他全局 Key
 const (
 	// Session Key 用于 session 认证
-	KeySessionUser = "user"
+	KeySessionUser      = "user"
+	KeyAdminSessionInfo = "AdminSessionInfoKey"
 )
 
 // requestlog 中使用

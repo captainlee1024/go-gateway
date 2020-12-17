@@ -1,0 +1,284 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Go-Gateway 是基于 Go 语言实现的网关！",
+        "title": "Go-Gateway",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "CaptainLee1024",
+            "url": "http://blog.leecoding.club",
+            "email": "644052732@qq.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "127.0.0.1:8080",
+    "basePath": "/",
+    "paths": {
+        "/admin/admin_info": {
+            "get": {
+                "description": "从登陆的 Session 中获取管理员信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员接口"
+                ],
+                "summary": "管理员信息",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.AdminInfoOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/change_pwd": {
+            "post": {
+                "description": "修改已登录账户的密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员接口"
+                ],
+                "summary": "修改密码",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangePwdInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin_login/login": {
+            "post": {
+                "description": "管理员登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员接口"
+                ],
+                "summary": "管理员登录",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminLoginInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.AdminLoginOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin_login/logout": {
+            "get": {
+                "description": "管理员退出",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员接口"
+                ],
+                "summary": "管理员退出",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.AdminInfoOutput": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "description": "登录用户头像",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "管理员 ID",
+                    "type": "integer"
+                },
+                "introduction": {
+                    "description": "介绍",
+                    "type": "string"
+                },
+                "login_time": {
+                    "description": "登录时间",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": ".",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user_name": {
+                    "description": "登录管理员姓名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AdminLoginInput": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "example": "123456"
+                },
+                "username": {
+                    "description": "管理员账户",
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "dto.AdminLoginOutput": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "description": "用户 token",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ChangePwdInput": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "description": "新密码",
+                    "type": "string",
+                    "example": "123456"
+                }
+            }
+        },
+        "middleware.Response": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "数据信息",
+                    "type": "object"
+                },
+                "errmsg": {
+                    "description": "错误信息",
+                    "type": "string"
+                },
+                "errno": {
+                    "description": "错误码",
+                    "type": "integer"
+                },
+                "stack": {
+                    "description": "错误堆栈信息",
+                    "type": "object"
+                },
+                "trace_id": {
+                    "description": "日志 traceID",
+                    "type": "object"
+                }
+            }
+        }
+    }
+}

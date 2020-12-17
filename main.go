@@ -1,22 +1,16 @@
 package main
 
 import (
-	"context"
-	"fmt"
-
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"github.com/captainlee1024/go-gateway/internal/gateway/data/mysql"
 	"github.com/captainlee1024/go-gateway/internal/gateway/data/redis"
 	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
 	"github.com/captainlee1024/go-gateway/internal/gateway/router"
 	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"github.com/captainlee1024/go-gateway/pkg/snowflake"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 /* swagger main 函数注释格式（写项目相关介绍信息）
@@ -36,9 +30,9 @@ import (
 // @BasePath 这里写base path
 */
 
-// @title Gateway
+// @title Go-Gateway
 // @version 1.0
-// @description 基于 Go 的网关
+// @description Go-Gateway 是基于 Go 语言实现的网关！
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name CaptainLee1024
@@ -49,11 +43,11 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 
 // @host 127.0.0.1:8080
-// @BasePath /gateway/v1
+// @BasePath /
 func main() {
 	// 1. 加载配置
 	// 2. 初始化日志
-	if err := settings.Init("../../configs/dev/"); err != nil {
+	if err := settings.Init("./configs/dev/"); err != nil {
 		// log.Fatal(err)
 		panic(err)
 	}
@@ -92,22 +86,8 @@ func main() {
 		return
 	}
 
-	// 5. 注册路由
-	r := router.SetUp()
-
-	// 6. 启动服务（开启平滑下线）
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", settings.ConfBase.Port),
-		Handler: r,
-	}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			mylog.Log.Fatal("listen", mylog.NewTrace(), mylog.DLTagUndefind, map[string]interface{}{
-				"err": err,
-			})
-		}
-	}()
+	// 注册路由，开启服务
+	router.HttpServerRun()
 
 	// 等待中断信号来优雅关闭服务器，为关闭服务器操作设置一个5秒的延时
 	quit := make(chan os.Signal, 1)
@@ -118,23 +98,8 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) // 此处不会阻塞
 	<-quit
 
-	shoutdownTrace := mylog.NewTrace()
-	mylog.Log.Info("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Shoutdown Server ...",
-	})
-
-	// 创建一个 5 秒超时的 context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		mylog.Log.Fatal("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-			"error": err,
-		})
-	}
-
-	mylog.Log.Info("Server exiting", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Server exiting",
-	})
+	// 收到信号，开始平滑下线
+	router.HttpServerStop()
 
 	/*
 		// test mylog debug

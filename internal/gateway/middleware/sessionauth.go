@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 
 	"github.com/gin-gonic/contrib/sessions"
@@ -14,7 +13,8 @@ func SessionAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		//if name, ok := session.Get("user").(string); !ok || name == "" {
-		if name, ok := session.Get(public.KeySessionUser).(string); !ok || name == "" {
+		//if name, ok := session.Get("mysession").(string); !ok || name == "" {
+		if name, ok := session.Get(public.KeyAdminSessionInfo).(string); !ok || name == "" {
 			ResponseError(c, CodeInternalError, errors.New("user not login"))
 			c.Abort()
 			return

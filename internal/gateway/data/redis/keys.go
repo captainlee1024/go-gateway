@@ -1,8 +1,8 @@
 package redis
 
 const (
-	Prefix                 = "fast-gin:"    // 项目前缀
-	KeyFastGinJWTSetPrefix = "fastgin:jwt:" // set 用户登录时的 accessToken
+	Prefix                 = "go-gateway:"    // 项目前缀
+	KeyFastGinJWTSetPrefix = "gateway:jwt:" // set 用户登录时的 accessToken
 )
 
 // 获取 redis 存储的 key

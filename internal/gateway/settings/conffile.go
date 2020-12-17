@@ -84,6 +84,7 @@ func ParseConfig(path string, fileName string, conf interface{}) (err error) {
 		fmt.Printf("%s [INFO] ===> %v\n", time.Now().Format(TimeFormat), ConfBase)
 		// fmt.Printf("===>%#v\n", ConfBase)
 		fmt.Printf("%s [INFO] ===> %#v\n", time.Now().Format(TimeFormat), ConfRedisMap.List["default"])
+		fmt.Printf("%s [INFO] ===> %#v\n", time.Now().Format(TimeFormat), ConfRedisMap.List["redis2"])
 		//fmt.Printf("===>%#v\n", ConfRedis)
 		fmt.Printf("%s [INFO] ===> %#v\n", time.Now().Format(TimeFormat), ConfMySQLMap.List["default"])
 		//fmt.Printf("===>%#v\n", ConfMySQL)
