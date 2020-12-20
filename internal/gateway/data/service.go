@@ -90,6 +90,7 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 	sqlStr := `SELECT *
 			FROM gateway_service_info
 			WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0
+			ORDER BY id DESC
 			LIMIT ?,?`
 	serviceInfoList = make([]*po.ServiceInfo, 0, 2)
 	err = mysql.SqlxLogSelect(trace, db, &serviceInfoList, sqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
