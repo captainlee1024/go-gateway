@@ -48,8 +48,8 @@ func SetUp() *gin.Engine {
 
 	adminRouter := r.Group("/admin")
 	adminRouter.Use(
-		sessions.Sessions("mysession", store),
 		middleware.GinRecovery(true),
+		sessions.Sessions("mysession", store),
 		middleware.RequestLog(),
 		middleware.IPAuthMiddleware(),
 		middleware.SessionAuthMiddleware(),
@@ -57,6 +57,18 @@ func SetUp() *gin.Engine {
 	)
 	{
 		controller.AdminRegister(adminRouter)
+	}
+
+	serviceRouter := r.Group("/service")
+	serviceRouter.Use(
+		middleware.GinRecovery(true),
+		sessions.Sessions("mysession", store),
+		middleware.RequestLog(),
+		middleware.IPAuthMiddleware(),
+		middleware.SessionAuthMiddleware(),
+		middleware.TranslationMiddleware())
+	{
+		controller.ServiceRegister(serviceRouter)
 	}
 
 	return r
