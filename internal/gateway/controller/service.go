@@ -24,6 +24,10 @@ func ServiceRegister(group *gin.RouterGroup) {
 	group.GET("/service_stat", serviceController.ServiceStat)
 	group.POST("/service_add_http", serviceController.ServiceAddHTTP)
 	group.POST("/service_update_http", serviceController.ServiceUpdateHTTP)
+	group.POST("/service_add_grpc", serviceController.ServiceAddGRPC)
+	group.POST("/service_update_grpc", serviceController.ServiceUpdateGRPC)
+	group.POST("/service_add_tcp", serviceController.ServiceAddTCP)
+	group.POST("/service_update_tcp", serviceController.ServiceUpdateTCP)
 }
 
 type ServiceController struct {
@@ -227,4 +231,134 @@ func (s *ServiceController) ServiceStat(c *gin.Context) {
 		Today:     todayList,
 		Yesterday: yesterdayList,
 	})
+}
+
+// ServiceAddGRPC godoc
+// @Summary 添加 GRPC 服务
+// @Description 添加 GRPC 服务
+// @Tags 服务管理
+// @ID /service/service_add_grpc
+// @Accept  json
+// @Produce  json
+// @Param body body dto.ServiceAddGrpcInput true "body"
+// @Success 200 {object} middleware.Response{data=string} "success"
+// @Router /service/service_add_grpc [POST]
+func (s *ServiceController) ServiceAddGRPC(c *gin.Context) {
+	// 参数校验（基本校验）
+	params := &dto.ServiceAddGrpcInput{}
+	if err := params.BindingValidParams(c); err != nil {
+		middleware.ResponseError(c, 2015, err)
+		return
+	}
+
+	// 参数校验（其它加强校验）
+	if len(strings.Split(params.IpList, ",")) != len(strings.Split(params.WeightList, ",")) {
+		middleware.ResponseError(c, 2016, errors.New("IP列表与权重列表数量不匹配"))
+		return
+	}
+
+	// 入库
+	if err := s.useCase.AddGRPC(params, c); err != nil {
+		middleware.ResponseError(c, 2017, err)
+		return
+	}
+
+	middleware.ResponseSuccess(c, "")
+}
+
+// ServiceUpdateGRPC godoc
+// @Summary 修改 GRPC 服务
+// @Description 修改 GRPC 服务
+// @Tags 服务管理
+// @ID /service/service_update_grpc
+// @Accept json
+// @Produce json
+// @Param body body dto.ServiceUpdateGrpcInput true "body"
+// @Success 200 {object} middleware.Response{data=string} "Success"
+// @Router /service/service_update_grpc [POST]
+func (s *ServiceController) ServiceUpdateGRPC(c *gin.Context) {
+	// 参数校验（基本校验）
+	params := &dto.ServiceUpdateGrpcInput{}
+	if err := params.BindingValidParams(c); err != nil {
+		middleware.ResponseError(c, 20018, err)
+		return
+	}
+	// 参数校验（其他加强校验）
+	if len(strings.Split(params.IpList, ",")) != len(strings.Split(params.WeightList, ",")) {
+		middleware.ResponseError(c, 2019, errors.New("IP列表与权重列表数量不匹配"))
+		return
+	}
+
+	// 入库
+	if err := s.useCase.UpdateGRPC(params, c); err != nil {
+		middleware.ResponseError(c, 2019, err)
+		return
+	}
+
+	middleware.ResponseSuccess(c, "")
+}
+
+// ServiceAddTCP godoc
+// @Summary 添加 TCP 服务
+// @Description 添加 TCP 服务
+// @Tags 服务管理
+// @ID /service/service_add_tcp
+// @Accept  json
+// @Produce  json
+// @Param body body dto.ServiceAddTcpInput true "body"
+// @Success 200 {object} middleware.Response{data=string} "success"
+// @Router /service/service_add_tcp [POST]
+func (s *ServiceController) ServiceAddTCP(c *gin.Context) {
+	// 参数校验（基本校验）
+	params := &dto.ServiceAddTcpInput{}
+	if err := params.BindingValidParams(c); err != nil {
+		middleware.ResponseError(c, 2015, err)
+		return
+	}
+
+	// 参数校验（其它加强校验）
+	if len(strings.Split(params.IpList, ",")) != len(strings.Split(params.WeightList, ",")) {
+		middleware.ResponseError(c, 2016, errors.New("IP列表与权重列表数量不匹配"))
+		return
+	}
+
+	// 入库
+	if err := s.useCase.AddTCP(params, c); err != nil {
+		middleware.ResponseError(c, 2016, err)
+		return
+	}
+
+	middleware.ResponseSuccess(c, "")
+}
+
+// ServiceUpdateTCP godoc
+// @Summary 修改 TCP 服务
+// @Description 修改 TCP 服务
+// @Tags 服务管理
+// @ID /service/service_update_tcp
+// @Accept json
+// @Produce json
+// @Param body body dto.ServiceUpdateTcpInput true "body"
+// @Success 200 {object} middleware.Response{data=string} "Success"
+// @Router /service/service_update_tcp [POST]
+func (s *ServiceController) ServiceUpdateTCP(c *gin.Context) {
+	// 参数校验（基本校验）
+	params := &dto.ServiceUpdateTcpInput{}
+	if err := params.BindingValidParams(c); err != nil {
+		middleware.ResponseError(c, 20018, err)
+		return
+	}
+	// 参数校验（其他加强校验）
+	if len(strings.Split(params.IpList, ",")) != len(strings.Split(params.WeightList, ",")) {
+		middleware.ResponseError(c, 2019, errors.New("IP列表与权重列表数量不匹配"))
+		return
+	}
+
+	// 入库
+	if err := s.useCase.UpdateTCP(params, c); err != nil {
+		middleware.ResponseError(c, 2019, err)
+		return
+	}
+
+	middleware.ResponseSuccess(c, "")
 }

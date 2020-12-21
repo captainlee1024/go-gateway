@@ -33,18 +33,28 @@ type ServiceRepo interface {
 	GetServiceTCPRuleByID(int64, *gin.Context) (*po.ServiceTCPRule, error)
 	InsertServiceTCPRule(*sqlx.Tx, *po.ServiceTCPRule, *gin.Context) error
 	UpdateTCPRule(*sqlx.Tx, *po.ServiceTCPRule, *gin.Context) error
+	GetServiceTCPRuleByPort(int, *gin.Context) (*po.ServiceTCPRule, error)
+	AddTCPDetail(*do.ServiceDetail, *gin.Context) error
+	UpdateTCPDetail(*do.ServiceDetail, *gin.Context) error
 
 	GetServiceGRPCRuleByID(int64, *gin.Context) (*po.ServiceGRPCRule, error)
 	InsertServiceGRPCRule(*sqlx.Tx, *po.ServiceGRPCRule, *gin.Context) error
 	UpdateGRPCRule(*sqlx.Tx, *po.ServiceGRPCRule, *gin.Context) error
+	GetServiceGRPCRuleByPort(int, *gin.Context) (*po.ServiceGRPCRule, error)
+	AddGRPCDetail(*do.ServiceDetail, *gin.Context) error
+	UpdateGrpcDetail(*do.ServiceDetail, *gin.Context) error
 
 	GetServiceLoadBalanceByID(int64, *gin.Context) (*po.ServiceLoadBalance, error)
-	InsertServiceLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
-	UpdateLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
+	InsertServiceHTTPLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
+	UpdateHTTPLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
+	InsertServiceGRPCTCPLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
+	UpdateGRPCTCPLoadBalance(*sqlx.Tx, *po.ServiceLoadBalance, *gin.Context) error
 
 	GetServiceAccessControllerByID(int64, *gin.Context) (*po.ServiceAccessControl, error)
-	InsertServiceAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
-	UpdateAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
+	InsertServiceHTTPAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
+	UpdateHTTPAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
+	InsertServiceGRPCTCPAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
+	UpdateGRPCTCPAccessControl(*sqlx.Tx, *po.ServiceAccessControl, *gin.Context) error
 }
 
 type ServiceUseCase struct {
@@ -267,4 +277,199 @@ func (useCase *ServiceUseCase) GetServiceDetail(ID int64, c *gin.Context) (servi
 		return nil, err
 	}
 	return serviceDetail, nil
+}
+
+func (useCase *ServiceUseCase) AddGRPC(addGRPC *dto.ServiceAddGrpcInput, c *gin.Context) (err error) {
+
+	// 校验服务名称是否存在
+	if _, err = useCase.repo.GetServiceInfoByName(addGRPC.ServiceName, c); err == nil {
+		return errors.New("服务已存在，请更换服务名称")
+	}
+
+	// 校验端口是否占用
+	if _, err = useCase.repo.GetServiceGRPCRuleByPort(addGRPC.Port, c); err == nil {
+		return errors.New("端口已占用")
+	}
+
+	if _, err = useCase.repo.GetServiceTCPRuleByPort(addGRPC.Port, c); err == nil {
+		return errors.New("端口已占用")
+	}
+
+	// 入库
+	currentTime := time.Now()
+	grpcInfo := &po.ServiceInfo{
+		ServiceName: addGRPC.ServiceName,
+		ServiceDesc: addGRPC.ServiceDesc,
+		LoadType:    public.LoadTypeGRPC,
+		CreatedAt:   currentTime,
+		UpdatedAt:   currentTime,
+		IsDelete:    0,
+	}
+
+	grpcRule := &po.ServiceGRPCRule{
+		Port:           addGRPC.Port,
+		HeaderTransfor: addGRPC.HeaderTransfor,
+	}
+
+	loadBalance := &po.ServiceLoadBalance{
+		RoundType:  addGRPC.RoundType,
+		IPList:     addGRPC.IpList,
+		WeightList: addGRPC.WeightList,
+
+		ForbidList: addGRPC.ForbidList,
+	}
+
+	accessControl := &po.ServiceAccessControl{
+		OpenAuth:          addGRPC.OpenAuth,
+		WhiteList:         addGRPC.WhiteList,
+		BlackList:         addGRPC.BlackList,
+		ClientIPFlowLimit: addGRPC.ClientIPFlowLimit,
+		ServiceFlowLimit:  addGRPC.ServiceFlowLimit,
+
+		WhiteHostName: addGRPC.WhiteHostName,
+	}
+
+	grpcDetail := &do.ServiceDetail{
+		Info:          grpcInfo,
+		GRPCRule:      grpcRule,
+		LoadBalance:   loadBalance,
+		AccessControl: accessControl,
+	}
+
+	return useCase.repo.AddGRPCDetail(grpcDetail, c)
+}
+
+func (useCase *ServiceUseCase) UpdateGRPC(updateGRPC *dto.ServiceUpdateGrpcInput, c *gin.Context) (err error) {
+	// 校验服务是否存在
+	grpcInfo, err := useCase.repo.GetServiceInfoByID(updateGRPC.ID, c)
+	if err != nil {
+		return errors.New("服务不存在")
+	}
+
+	// 校验服务是否存在
+	grpcDetail, err := useCase.repo.GetServiceDetail(grpcInfo, c)
+	if err != nil {
+		return errors.New("服务不存在")
+	}
+
+	// 数据库原始数据
+	grpcDetail.Info = grpcInfo
+
+	// 复制变更的数据
+	grpcDetail.Info.ServiceDesc = updateGRPC.ServiceDesc
+
+	// GRPCRule
+	grpcDetail.GRPCRule.HeaderTransfor = updateGRPC.HeaderTransfor
+
+	// LoadBalance
+	grpcDetail.LoadBalance.RoundType = updateGRPC.RoundType
+	grpcDetail.LoadBalance.IPList = updateGRPC.IpList
+	grpcDetail.LoadBalance.WeightList = updateGRPC.WeightList
+	grpcDetail.LoadBalance.ForbidList = updateGRPC.ForbidList
+
+	// AccessControl
+	grpcDetail.AccessControl.OpenAuth = updateGRPC.OpenAuth
+	grpcDetail.AccessControl.WhiteHostName = updateGRPC.WhiteHostName
+	grpcDetail.AccessControl.BlackList = updateGRPC.BlackList
+	grpcDetail.AccessControl.WhiteList = updateGRPC.WhiteList
+	grpcDetail.AccessControl.ClientIPFlowLimit = updateGRPC.ClientIPFlowLimit
+	grpcDetail.AccessControl.ServiceFlowLimit = updateGRPC.ServiceFlowLimit
+
+	return useCase.repo.UpdateGrpcDetail(grpcDetail, c)
+}
+
+func (useCase *ServiceUseCase) AddTCP(addTCP *dto.ServiceAddTcpInput, c *gin.Context) (err error) {
+	// 校验服务名是否已存在
+	_, err = useCase.repo.GetServiceInfoByName(addTCP.ServiceName, c)
+	if err == nil {
+		return errors.New("服务已存在，请更换服务名称")
+	}
+
+	// 校验端口是否被占用
+	if _, err = useCase.repo.GetServiceGRPCRuleByPort(addTCP.Port, c); err == nil {
+		return errors.New("端口已占用")
+	}
+
+	if _, err = useCase.repo.GetServiceTCPRuleByPort(addTCP.Port, c); err == nil {
+		return errors.New("端口已占用")
+	}
+
+	// 入库
+	currentTime := time.Now()
+	tcpInfo := &po.ServiceInfo{
+		ServiceName: addTCP.ServiceName,
+		ServiceDesc: addTCP.ServiceDesc,
+		LoadType:    public.LoadTypeTCP,
+		CreatedAt:   currentTime,
+		UpdatedAt:   currentTime,
+		IsDelete:    0,
+	}
+
+	tcpRule := &po.ServiceTCPRule{
+		Port: addTCP.Port,
+	}
+
+	loadBalance := &po.ServiceLoadBalance{
+		RoundType:  addTCP.RoundType,
+		IPList:     addTCP.IpList,
+		WeightList: addTCP.WeightList,
+
+		ForbidList: addTCP.ForbidList,
+	}
+
+	accessControl := &po.ServiceAccessControl{
+		OpenAuth:          addTCP.OpenAuth,
+		WhiteList:         addTCP.WhiteList,
+		BlackList:         addTCP.BlackList,
+		ClientIPFlowLimit: addTCP.ClientIPFlowLimit,
+		ServiceFlowLimit:  addTCP.ServiceFlowLimit,
+
+		WhiteHostName: addTCP.WhiteHostName,
+	}
+
+	tcpDetail := &do.ServiceDetail{
+		Info:          tcpInfo,
+		TCPRule:       tcpRule,
+		LoadBalance:   loadBalance,
+		AccessControl: accessControl,
+	}
+
+	return useCase.repo.AddTCPDetail(tcpDetail, c)
+}
+func (useCase *ServiceUseCase) UpdateTCP(updateTCP *dto.ServiceUpdateTcpInput, c *gin.Context) (err error) {
+	// 校验服务是否存在
+	tcpInfo, err := useCase.repo.GetServiceInfoByID(updateTCP.ID, c)
+	if err != nil {
+		return errors.New("服务不存在")
+	}
+
+	// 校验服务是否存在
+	tcpDetail, err := useCase.repo.GetServiceDetail(tcpInfo, c)
+	if err != nil {
+		return errors.New("服务不存在")
+	}
+
+	// 数据库原始数据
+	tcpDetail.Info = tcpInfo
+
+	// 复制变更的数据
+	tcpDetail.Info.ServiceDesc = updateTCP.ServiceDesc
+
+	// TCPRule -> 没有可更改的数据
+
+	// LoadBalance
+	tcpDetail.LoadBalance.RoundType = updateTCP.RoundType
+	tcpDetail.LoadBalance.IPList = updateTCP.IpList
+	tcpDetail.LoadBalance.WeightList = updateTCP.WeightList
+	tcpDetail.LoadBalance.ForbidList = updateTCP.ForbidList
+
+	// AccessControl
+	tcpDetail.AccessControl.OpenAuth = updateTCP.OpenAuth
+	tcpDetail.AccessControl.WhiteHostName = updateTCP.WhiteHostName
+	tcpDetail.AccessControl.BlackList = updateTCP.BlackList
+	tcpDetail.AccessControl.WhiteList = updateTCP.WhiteList
+	tcpDetail.AccessControl.ClientIPFlowLimit = updateTCP.ClientIPFlowLimit
+	tcpDetail.AccessControl.ServiceFlowLimit = updateTCP.ServiceFlowLimit
+
+	return useCase.repo.UpdateTCPDetail(tcpDetail, c)
 }

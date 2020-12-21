@@ -9,6 +9,7 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 var _ service.ServiceRepo = (service.ServiceRepo)(nil)
@@ -205,10 +206,10 @@ func (repo *serviceRepo) DeleteServiceInfo(serviceInfoPo *po.ServiceInfo, c *gin
 
 func (repo *serviceRepo) UpdateServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceInfo, c *gin.Context) (err error) {
 	sqlStr := `UPDATE gateway_service_info
-			SET service_desc = ?
+			SET service_desc = ?, update_at = ?
 			WHERE id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceInfo.ServiceDesc, serviceInfo.ID)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceInfo.ServiceDesc, time.Now(), serviceInfo.ID)
 	return err
 }
 
@@ -290,13 +291,13 @@ func (repo *serviceRepo) AddHTTPDetail(httpDetail *do.ServiceDetail, c *gin.Cont
 	}
 
 	// LoadBalance
-	if err = repo.InsertServiceLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
+	if err = repo.InsertServiceHTTPLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	// AccessControl
-	if err = repo.InsertServiceAccessControl(tx, httpDetail.AccessControl, c); err != nil {
+	if err = repo.InsertServiceHTTPAccessControl(tx, httpDetail.AccessControl, c); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -352,13 +353,13 @@ func (repo *serviceRepo) UpdateHTTPDetail(httpDetail *do.ServiceDetail, c *gin.C
 	}
 
 	// 更新 LoadBalance
-	if err = repo.UpdateLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
+	if err = repo.UpdateHTTPLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	// 更新 AccessControl
-	if err = repo.UpdateAccessControl(tx, httpDetail.AccessControl, c); err != nil {
+	if err = repo.UpdateHTTPAccessControl(tx, httpDetail.AccessControl, c); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -417,8 +418,113 @@ func (repo *serviceRepo) InsertServiceTCPRule(tx *sqlx.Tx, tcpRule *po.ServiceTC
 	return nil
 }
 
-func (repo *serviceRepo) UpdateTCPRule(tx *sqlx.Tx, serviceTCPRule *po.ServiceTCPRule, c *gin.Context) (err error) {
+func (repo *serviceRepo) AddTCPDetail(tcpDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 插入 ServiceInfo 并返回 ID
+	ID, err := repo.InsertServiceInfo(tx, tcpDetail.Info, c)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tcpDetail.Info.ID = ID
+	tcpDetail.TCPRule.ServiceID = ID
+	tcpDetail.LoadBalance.ServiceID = ID
+	tcpDetail.AccessControl.ServiceID = ID
+
+	// 插入其他表
+	// TCPRule
+	if err = repo.InsertServiceTCPRule(tx, tcpDetail.TCPRule, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// LoadBalance
+	if err = repo.InsertServiceGRPCTCPLoadBalance(tx, tcpDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// AccessControl
+	if err = repo.InsertServiceGRPCTCPAccessControl(tx, tcpDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
 	return nil
+}
+
+func (repo *serviceRepo) UpdateTCPDetail(tcpDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 更新 ServiceInfo
+	if err = repo.UpdateServiceInfo(tx, tcpDetail.Info, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 TCPRule -> 没有可变更选项
+	//if err = repo.UpdateTCPRule(tx, tcpDetail.TCPRule, c); err != nil {
+	//	tx.Rollback()
+	//	return err
+	//}
+
+	// 更新 LoadBalance
+	if err = repo.UpdateGRPCTCPLoadBalance(tx, tcpDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 AccessControl
+	if err = repo.UpdateGRPCTCPAccessControl(tx, tcpDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (repo *serviceRepo) UpdateTCPRule(tx *sqlx.Tx, serviceTCPRule *po.ServiceTCPRule, c *gin.Context) (err error) {
+	// TCPRule 里的数据都是不允许变更的
+	return nil
+}
+
+func (repo *serviceRepo) GetServiceTCPRuleByPort(port int, c *gin.Context) (serviceTCPRule *po.ServiceTCPRule, err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return nil, err
+	}
+
+	trace := public.GetGinTraceContext(c)
+	sqlStr := `SELECT * FROM gateway_service_tcp_rule
+			WHERE port = ?`
+	serviceTCPRule = &po.ServiceTCPRule{}
+	if err = mysql.SqlxLogGet(trace, db, serviceTCPRule, sqlStr, port); err != nil {
+		return nil, err
+	}
+
+	return serviceTCPRule, nil
 }
 
 // GRPCRule 相关持久化接口实现
@@ -456,8 +562,117 @@ func (repo *serviceRepo) InsertServiceGRPCRule(tx *sqlx.Tx, grpcRule *po.Service
 	return nil
 }
 
-func (repo *serviceRepo) UpdateGRPCRule(tx *sqlx.Tx, serviceGRPCRule *po.ServiceGRPCRule, c *gin.Context) (err error) {
+func (repo *serviceRepo) AddGRPCDetail(grpcDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 插入 ServiceInfo 并返回 ID
+	ID, err := repo.InsertServiceInfo(tx, grpcDetail.Info, c)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	grpcDetail.Info.ID = ID
+	grpcDetail.GRPCRule.ServiceID = ID
+	grpcDetail.LoadBalance.ServiceID = ID
+	grpcDetail.AccessControl.ServiceID = ID
+
+	// 插入其他表
+	// GRPCRule
+	if err = repo.InsertServiceGRPCRule(tx, grpcDetail.GRPCRule, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// LoadBalance
+	if err = repo.InsertServiceGRPCTCPLoadBalance(tx, grpcDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// AccessControl
+	if err = repo.InsertServiceGRPCTCPAccessControl(tx, grpcDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
 	return nil
+}
+
+func (repo *serviceRepo) UpdateGrpcDetail(grpcDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 更新 ServiceInfo
+	if err = repo.UpdateServiceInfo(tx, grpcDetail.Info, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 GRPCRule
+	if err = repo.UpdateGRPCRule(tx, grpcDetail.GRPCRule, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 LoadBalance
+	if err = repo.UpdateGRPCTCPLoadBalance(tx, grpcDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 AccessControl
+	if err = repo.UpdateGRPCTCPAccessControl(tx, grpcDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (repo *serviceRepo) UpdateGRPCRule(tx *sqlx.Tx, serviceGRPCRule *po.ServiceGRPCRule, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_grpc_rule
+			SET header_transfor=?
+			WHERE service_id=?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceGRPCRule.HeaderTransfor, serviceGRPCRule.ServiceID)
+	return err
+}
+
+func (repo *serviceRepo) GetServiceGRPCRuleByPort(port int, c *gin.Context) (serviceGRPCRUle *po.ServiceGRPCRule, err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return nil, err
+	}
+
+	trace := public.GetGinTraceContext(c)
+	sqlStr := `SELECT * FROM gateway_service_grpc_rule
+			WHERE port = ?`
+	serviceGRPCRUle = &po.ServiceGRPCRule{}
+	if err = mysql.SqlxLogGet(trace, db, serviceGRPCRUle, sqlStr, port); err != nil {
+		return nil, err
+	}
+
+	return serviceGRPCRUle, nil
 }
 
 // LoadBalance 相关持久化接口实现
@@ -481,7 +696,7 @@ func (repo *serviceRepo) GetServiceLoadBalanceByID(ID int64, c *gin.Context,
 	return loadBalance, nil
 }
 
-func (repo *serviceRepo) InsertServiceLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+func (repo *serviceRepo) InsertServiceHTTPLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
 	sqlStr := `INSERT INTO gateway_service_load_balance(
 			service_id, round_type, ip_list, weight_list,
 			upstream_connect_timeout, upstream_header_timeout,
@@ -502,7 +717,7 @@ func (repo *serviceRepo) InsertServiceLoadBalance(tx *sqlx.Tx, loadBalance *po.S
 	return nil
 }
 
-func (repo *serviceRepo) UpdateLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+func (repo *serviceRepo) UpdateHTTPLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
 	sqlStr := `UPDATE gateway_service_load_balance
 			SET round_type=?, ip_list=?, weight_list=?,
 			upstream_connect_timeout=?, upstream_header_timeout=?,
@@ -517,6 +732,37 @@ func (repo *serviceRepo) UpdateLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceL
 		loadBalance.UpStreamHeaderTimeout,
 		loadBalance.UpStreamIdleTimeout,
 		loadBalance.UpStreamMaxIdle,
+		loadBalance.ServiceID)
+
+	return err
+}
+
+func (repo *serviceRepo) InsertServiceGRPCTCPLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_load_balance(
+			service_id, round_type, ip_list, weight_list, forbid_list)
+			VALUES(?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		loadBalance.ServiceID,
+		loadBalance.RoundType,
+		loadBalance.IPList,
+		loadBalance.WeightList,
+		loadBalance.ForbidList); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (repo *serviceRepo) UpdateGRPCTCPLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_load_balance
+			SET round_type=?, ip_list=?, weight_list=?, forbid_list=?
+			WHERE service_id = ?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		loadBalance.RoundType,
+		loadBalance.IPList,
+		loadBalance.WeightList,
+		loadBalance.ForbidList,
 		loadBalance.ServiceID)
 
 	return err
@@ -543,7 +789,7 @@ func (repo *serviceRepo) GetServiceAccessControllerByID(ID int64, c *gin.Context
 	return accessController, nil
 }
 
-func (repo *serviceRepo) InsertServiceAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+func (repo *serviceRepo) InsertServiceHTTPAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
 	sqlStr := `INSERT INTO gateway_service_access_control(
 			service_id, open_auth, black_list, white_list, clientip_flow_limit, service_flow_limit)
 			VALUES(?,?,?,?,?,?)`
@@ -560,7 +806,7 @@ func (repo *serviceRepo) InsertServiceAccessControl(tx *sqlx.Tx, accessControl *
 	return nil
 }
 
-func (repo *serviceRepo) UpdateAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+func (repo *serviceRepo) UpdateHTTPAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
 	sqlStr := `UPDATE gateway_service_access_control
 			SET open_auth=?, black_list=?, white_list=?, clientip_flow_limit=?, service_flow_limit=?
 			WHERE service_id = ?`
@@ -571,6 +817,40 @@ func (repo *serviceRepo) UpdateAccessControl(tx *sqlx.Tx, accessControl *po.Serv
 		accessControl.WhiteList,
 		accessControl.ClientIPFlowLimit,
 		accessControl.ServiceFlowLimit,
+		accessControl.ServiceID)
+
+	return err
+}
+
+func (repo *serviceRepo) InsertServiceGRPCTCPAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_access_control(
+			service_id, open_auth, black_list, white_list, clientip_flow_limit, service_flow_limit, white_host_name)
+			VALUES(?,?,?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		accessControl.ServiceID,
+		accessControl.OpenAuth,
+		accessControl.BlackList,
+		accessControl.WhiteList,
+		accessControl.ClientIPFlowLimit,
+		accessControl.ServiceFlowLimit,
+		accessControl.WhiteHostName); err != nil {
+		return err
+	}
+	return nil
+}
+func (repo *serviceRepo) UpdateGRPCTCPAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_access_control
+			SET open_auth=?, black_list=?, white_list=?, clientip_flow_limit=?, service_flow_limit=?, white_host_name=?
+			WHERE service_id = ?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		accessControl.OpenAuth,
+		accessControl.BlackList,
+		accessControl.WhiteList,
+		accessControl.ClientIPFlowLimit,
+		accessControl.ServiceFlowLimit,
+		accessControl.WhiteHostName,
 		accessControl.ServiceID)
 
 	return err
