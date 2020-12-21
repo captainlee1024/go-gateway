@@ -11,10 +11,10 @@ type ServiceListInput struct {
 
 // ServiceDetail 查询服务列表 Do
 type ServiceDetail struct {
-	Info          *po.ServiceInfo
-	HTTPRule      *po.ServiceHTTPRule
-	TCPRule       *po.ServiceTCPRule
-	GRPCRule      *po.ServiceGRPCRule
-	LoadBalance   *po.ServiceLoadBalance
-	AccessControl *po.ServiceAccessControl
+	Info          *po.ServiceInfo          `json:"info" description:"基本信息"`
+	HTTPRule      *po.ServiceHTTPRule      `json:"http_rule" description:"http_rule"`
+	TCPRule       *po.ServiceTCPRule       `json:"tcp_rule" description:"tcp_rule"`
+	GRPCRule      *po.ServiceGRPCRule      `json:"grpc_rule" description:"grpc_rule"`
+	LoadBalance   *po.ServiceLoadBalance   `json:"load_balance" description:"load_balance"`
+	AccessControl *po.ServiceAccessControl `json:"access_control" description:"access_control"`
 }

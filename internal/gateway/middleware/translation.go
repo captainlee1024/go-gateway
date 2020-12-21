@@ -4,6 +4,7 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
@@ -51,6 +52,13 @@ func TranslationMiddleware() gin.HandlerFunc {
 			// 2. 自定义翻译器
 			usernameValid(val, trans)
 			passwordValid(val, trans)
+			serviceNameValid(val, trans)
+			serviceRuleValid(val, trans)
+			serviceURLRewriteValid(val, trans)
+			serviceHeaderTransforValid(val, trans)
+			serviceIPPortListValid(val, trans)
+			serviceWeightListValid(val, trans)
+			serviceIPListValid(val, trans)
 
 			break
 		}
@@ -95,6 +103,162 @@ func passwordValid(val *validator.Validate, trans ut.Translator) {
 		},
 		func(ut ut.Translator, fe validator.FieldError) string {
 			t, _ := ut.T("valid_password", fe.Field())
+			return t
+		})
+}
+
+// 添加服务 服务名称校验
+func serviceNameValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_service_name", func(fl validator.FieldLevel) bool {
+		// 服务名只能包含数字，字母，下划线，且必须大于6位小于128位
+		matched, _ := regexp.Match(`^[a-zA-Z0-9_]{6,128}$`, []byte(fl.Field().String()))
+		return matched
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_service_name", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_service_name", "{0}只能包含数字，字母，下划线，且必须大于6位小于128位", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_service_name", fe.Field())
+			return t
+		})
+}
+
+// 添加 HTTP 服务 Rule 校验
+func serviceRuleValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_rule", func(fl validator.FieldLevel) bool {
+		matched, _ := regexp.Match(`^\S+$`, []byte(fl.Field().String()))
+		return matched
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_rule", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_rule", "{0}必须是非空字符", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_rule", fe.Field())
+			return t
+		})
+}
+
+// 添加 HTTP 服务 URLRewrite 校验
+func serviceURLRewriteValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_url_rewrite", func(fl validator.FieldLevel) bool {
+		if fl.Field().String() == "" {
+			return true
+		}
+		for _, ms := range strings.Split(fl.Field().String(), ",") {
+			if len(strings.Split(ms, " ")) != 2 {
+				return false
+			}
+		}
+		return true
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_url_rewrite", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_url_rewrite", "{0}输入不符合格式", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_url_rewrite", fe.Field())
+			return t
+		})
+}
+
+// 添加 HTTP 服务 HeaderTransfor 校验
+func serviceHeaderTransforValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_header_transfor", func(fl validator.FieldLevel) bool {
+		if fl.Field().String() == "" {
+			return true
+		}
+		for _, ms := range strings.Split(fl.Field().String(), ",") {
+			if len(strings.Split(ms, " ")) != 3 {
+				return false
+			}
+		}
+		return true
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_header_transfor", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_header_transfor", "{0}输入不符合格式", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_header_transfor", fe.Field())
+			return t
+		})
+}
+
+// 添加 HTTP 服务 IP:PortList 校验
+func serviceIPPortListValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_ipportlist", func(fl validator.FieldLevel) bool {
+		for _, ms := range strings.Split(fl.Field().String(), ",") {
+			if matched, _ := regexp.Match(`^\S+\:\d+$`, []byte(ms)); !matched {
+				return false
+			}
+		}
+		return true
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_ipportlist", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_ipportlist", "{0}输入不符合格式", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_ipportlist", fe.Field())
+			return t
+		})
+}
+
+// 添加 HTTP 服务权重校验
+func serviceWeightListValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_weightlist", func(fl validator.FieldLevel) bool {
+		for _, ms := range strings.Split(fl.Field().String(), ",") {
+			if matched, _ := regexp.Match(`^\d+$`, []byte(ms)); !matched {
+				return false
+			}
+		}
+		return true
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_weightlist", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_weightlist", "{0}输入不符合格式", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_weightlist", fe.Field())
+			return t
+		})
+}
+
+// 添加 TCP，gRPC 服务 IPList 校验
+func serviceIPListValid(val *validator.Validate, trans ut.Translator) {
+	// 自定义校验器
+	val.RegisterValidation("valid_iplist", func(fl validator.FieldLevel) bool {
+		if fl.Field().String() == "" {
+			return true
+		}
+		for _, item := range strings.Split(fl.Field().String(), ",") { // item->ip_addr
+			if matched, _ := regexp.Match(`^\d+$`, []byte(item)); !matched {
+				return false
+			}
+		}
+		return true
+	})
+	// 自定义翻译器
+	val.RegisterTranslation("valid_iplist", trans,
+		func(ut ut.Translator) error {
+			return ut.Add("valid_iplist", "{0}输入不符合格式", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("valid_iplist", fe.Field())
 			return t
 		})
 }

@@ -2,13 +2,13 @@ package data
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/captainlee1024/go-gateway/internal/gateway/data/mysql"
 	"github.com/captainlee1024/go-gateway/internal/gateway/do"
 	"github.com/captainlee1024/go-gateway/internal/gateway/po"
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 )
 
 var _ service.ServiceRepo = (service.ServiceRepo)(nil)
@@ -19,6 +19,7 @@ func NewServiceRepo() service.ServiceRepo {
 	return new(serviceRepo)
 }
 
+// ServiceInfo 相关持久化接口实现
 // GetServiceInfoList 根据条件获取服务信息列表
 func (repo *serviceRepo) GetServiceDetail(serviceInfo *po.ServiceInfo, c *gin.Context) (detail *do.ServiceDetail, err error) {
 	// page size info -> 查询各个表组装数据
@@ -94,7 +95,6 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 			LIMIT ?,?`
 	serviceInfoList = make([]*po.ServiceInfo, 0, 2)
 	err = mysql.SqlxLogSelect(trace, db, &serviceInfoList, sqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
-	fmt.Printf("%#v\n", serviceInfoList)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			serviceInfoList = nil
@@ -108,7 +108,6 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 			WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0
 			LIMIT ?,?) a`
 	err = mysql.SqlxLogGet(trace, db, &total, countSqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
-	fmt.Printf("%d\n", total)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			total = 0
@@ -120,6 +119,100 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 	return serviceInfoList, total, nil
 }
 
+func (repo *serviceRepo) GetServiceInfoByID(ID int64, c *gin.Context) (serviceInfoPo *po.ServiceInfo, err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return nil, err
+	}
+
+	serviceInfoPo = &po.ServiceInfo{}
+	trace := public.GetGinTraceContext(c)
+	sqlStr := `SELECT *
+			FROM gateway_service_info
+			WHERE is_delete = 0
+			AND id = ?`
+	if err = mysql.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, ID); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrServiceNotExit
+		} else {
+			return nil, err
+		}
+	}
+
+	return serviceInfoPo, nil
+}
+
+func (repo *serviceRepo) GetServiceInfoByName(serviceName string, c *gin.Context) (serviceInfoPo *po.ServiceInfo, err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return nil, err
+	}
+
+	serviceInfoPo = &po.ServiceInfo{}
+	trace := public.GetGinTraceContext(c)
+	sqlStr := `SELECT *
+			FROM gateway_service_info
+			WHERE is_delete = 0
+			AND service_name = ?`
+	if err = mysql.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, serviceName); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrServiceNotExit
+		} else {
+			return nil, err
+		}
+	}
+	return serviceInfoPo, nil
+}
+
+func (repo *serviceRepo) InsertServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceInfo, c *gin.Context) (ID int64, err error) {
+	sqlStr := `INSERT INTO gateway_service_info(
+			load_type, service_name, service_desc, create_at, update_at, is_delete)
+			values(?,?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	ret, err := mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		serviceInfo.LoadType,
+		serviceInfo.ServiceName,
+		serviceInfo.ServiceDesc,
+		serviceInfo.CreatedAt,
+		serviceInfo.UpdatedAt,
+		serviceInfo.IsDelete)
+	if err != nil {
+		return 0, err
+	}
+
+	ID, err = ret.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return ID, err
+}
+
+func (repo *serviceRepo) DeleteServiceInfo(serviceInfoPo *po.ServiceInfo, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	trace := public.GetGinTraceContext(c)
+	sqlStr := `UPDATE gateway_service_info
+			SET is_delete = 1
+			WHERE id = ?`
+	if _, err = mysql.SqlxLogExec(trace, db, sqlStr, serviceInfoPo.ID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceInfo, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_info
+			SET service_desc = ?
+			WHERE id = ?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceInfo.ServiceDesc, serviceInfo.ID)
+	return err
+}
+
+// HTTPRule 相关持久化接口实现
 // GetServiceHTTPRuleByID 根据 ID 查询一条 service_http_rule 数据
 func (repo *serviceRepo) GetServiceHTTPRuleByID(ID int64, c *gin.Context,
 ) (httpRule *po.ServiceHTTPRule, err error) {
@@ -141,6 +234,156 @@ func (repo *serviceRepo) GetServiceHTTPRuleByID(ID int64, c *gin.Context,
 	return httpRule, nil
 }
 
+func (repo *serviceRepo) GetServiceHTTPRuleByRule(ruleType int, rule string, c *gin.Context) (httpRule *po.ServiceHTTPRule, err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return nil, err
+	}
+
+	httpRule = new(po.ServiceHTTPRule)
+	trace := public.GetGinTraceContext(c)
+	httpRuleSqlStr := `SELECT * FROM gateway_service_http_rule WHERE rule_type = ? AND rule=?`
+	if err = mysql.SqlxLogGet(trace, db, httpRule, httpRuleSqlStr, ruleType, rule); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return httpRule, nil
+}
+
+func (repo *serviceRepo) AddHTTPDetail(httpDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 插入 serviceInfo，并返回 ID
+	ID, err := repo.InsertServiceInfo(tx, httpDetail.Info, c)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 获取 ServiceID
+	//httpDetail.Info, err = repo.GetServiceInfoByName(httpDetail.Info.ServiceName, c)
+	//if err != nil {
+	//	tx.Rollback()
+	//	return err
+	//}
+	httpDetail.Info.ID = ID
+
+	// 使用 ServiceID 插入其他表
+	httpDetail.HTTPRule.ServiceID = httpDetail.Info.ID
+	httpDetail.LoadBalance.ServiceID = httpDetail.Info.ID
+	httpDetail.AccessControl.ServiceID = httpDetail.Info.ID
+
+	// HTTPRule
+	if err = repo.InsertServiceHTTPRule(tx, httpDetail.HTTPRule, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// LoadBalance
+	if err = repo.InsertServiceLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// AccessControl
+	if err = repo.InsertServiceAccessControl(tx, httpDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+// InsertServiceHTTPRule 事务插入一条 http_rule 数据
+func (repo *serviceRepo) InsertServiceHTTPRule(tx *sqlx.Tx, httpRule *po.ServiceHTTPRule, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_http_rule(
+			service_id, rule_type, rule, need_https, need_strip_uri,
+			need_websocket, url_rewrite, header_transfor)
+			VALUES(?,?,?,?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		httpRule.ServiceID,
+		httpRule.RuleType,
+		httpRule.Rule,
+		httpRule.NeedHTTPs,
+		httpRule.NeedStripUri,
+		httpRule.NeedWebsocket,
+		httpRule.UrlRewrite,
+		httpRule.HeaderTransfor); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateHTTPDetail(httpDetail *do.ServiceDetail, c *gin.Context) (err error) {
+	db, err := mysql.GetDBPool("default")
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	// 更新 ServiceInfo
+	if err = repo.UpdateServiceInfo(tx, httpDetail.Info, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 HTTPRule
+	if err = repo.UpdateHTTPRule(tx, httpDetail.HTTPRule, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 LoadBalance
+	if err = repo.UpdateLoadBalance(tx, httpDetail.LoadBalance, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新 AccessControl
+	if err = repo.UpdateAccessControl(tx, httpDetail.AccessControl, c); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (repo *serviceRepo) UpdateHTTPRule(tx *sqlx.Tx, serviceHTTPRule *po.ServiceHTTPRule, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_http_rule
+			SET need_https=?, need_strip_uri=?, need_websocket=?, url_rewrite=?, header_transfor=?
+			WHERE service_id=?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		serviceHTTPRule.NeedHTTPs,
+		serviceHTTPRule.NeedStripUri,
+		serviceHTTPRule.NeedWebsocket,
+		serviceHTTPRule.UrlRewrite,
+		serviceHTTPRule.HeaderTransfor,
+		serviceHTTPRule.ServiceID)
+	return err
+}
+
+// TCPRule 相关持久化接口实现
 // GetServiceTCPRuleByID 根据 ID 查询一条 service_tcp_rule 记录
 func (repo *serviceRepo) GetServiceTCPRuleByID(ID int64, c *gin.Context,
 ) (tcpRule *po.ServiceTCPRule, err error) {
@@ -161,6 +404,24 @@ func (repo *serviceRepo) GetServiceTCPRuleByID(ID int64, c *gin.Context,
 	return tcpRule, nil
 }
 
+func (repo *serviceRepo) InsertServiceTCPRule(tx *sqlx.Tx, tcpRule *po.ServiceTCPRule, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_tcp_rule(service_id, port)
+			VALUES(?,?)`
+
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		tcpRule.ServiceID,
+		tcpRule.Port); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateTCPRule(tx *sqlx.Tx, serviceTCPRule *po.ServiceTCPRule, c *gin.Context) (err error) {
+	return nil
+}
+
+// GRPCRule 相关持久化接口实现
 // GetServiceGRPCRuleByID 根据 ID 查询一条 Service
 func (repo *serviceRepo) GetServiceGRPCRuleByID(ID int64, c *gin.Context,
 ) (grpcRule *po.ServiceGRPCRule, err error) {
@@ -181,6 +442,25 @@ func (repo *serviceRepo) GetServiceGRPCRuleByID(ID int64, c *gin.Context,
 	return grpcRule, nil
 }
 
+func (repo *serviceRepo) InsertServiceGRPCRule(tx *sqlx.Tx, grpcRule *po.ServiceGRPCRule, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_grpc_rule(
+			service_id, port, header_transfor)
+			VALUES(?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		grpcRule.ServiceID,
+		grpcRule.Port,
+		grpcRule.HeaderTransfor); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateGRPCRule(tx *sqlx.Tx, serviceGRPCRule *po.ServiceGRPCRule, c *gin.Context) (err error) {
+	return nil
+}
+
+// LoadBalance 相关持久化接口实现
 // GetServiceLoadBalanceByID 根据 ID 查询一条 service_load_balance　记录
 func (repo *serviceRepo) GetServiceLoadBalanceByID(ID int64, c *gin.Context,
 ) (loadBalance *po.ServiceLoadBalance, err error) {
@@ -201,6 +481,48 @@ func (repo *serviceRepo) GetServiceLoadBalanceByID(ID int64, c *gin.Context,
 	return loadBalance, nil
 }
 
+func (repo *serviceRepo) InsertServiceLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_load_balance(
+			service_id, round_type, ip_list, weight_list,
+			upstream_connect_timeout, upstream_header_timeout,
+			upstream_idle_timeout, upstream_max_idle)
+			VALUES(?,?,?,?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		loadBalance.ServiceID,
+		loadBalance.RoundType,
+		loadBalance.IPList,
+		loadBalance.WeightList,
+		loadBalance.UpStreamConnectTimeout,
+		loadBalance.UpStreamHeaderTimeout,
+		loadBalance.UpStreamIdleTimeout,
+		loadBalance.UpStreamMaxIdle); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateLoadBalance(tx *sqlx.Tx, loadBalance *po.ServiceLoadBalance, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_load_balance
+			SET round_type=?, ip_list=?, weight_list=?,
+			upstream_connect_timeout=?, upstream_header_timeout=?,
+			upstream_idle_timeout=?, upstream_max_idle=?
+			WHERE service_id = ?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		loadBalance.RoundType,
+		loadBalance.IPList,
+		loadBalance.WeightList,
+		loadBalance.UpStreamConnectTimeout,
+		loadBalance.UpStreamHeaderTimeout,
+		loadBalance.UpStreamIdleTimeout,
+		loadBalance.UpStreamMaxIdle,
+		loadBalance.ServiceID)
+
+	return err
+}
+
+// AccessControl 相关持久化接口实现
 // GetServiceAccessControllerByID 根据 ID 查询一条 service_access_control 记录
 func (repo *serviceRepo) GetServiceAccessControllerByID(ID int64, c *gin.Context,
 ) (accessController *po.ServiceAccessControl, err error) {
@@ -219,4 +541,37 @@ func (repo *serviceRepo) GetServiceAccessControllerByID(ID int64, c *gin.Context
 		return nil, err
 	}
 	return accessController, nil
+}
+
+func (repo *serviceRepo) InsertServiceAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+	sqlStr := `INSERT INTO gateway_service_access_control(
+			service_id, open_auth, black_list, white_list, clientip_flow_limit, service_flow_limit)
+			VALUES(?,?,?,?,?,?)`
+	trace := public.GetGinTraceContext(c)
+	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		accessControl.ServiceID,
+		accessControl.OpenAuth,
+		accessControl.BlackList,
+		accessControl.WhiteList,
+		accessControl.ClientIPFlowLimit,
+		accessControl.ServiceFlowLimit); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *serviceRepo) UpdateAccessControl(tx *sqlx.Tx, accessControl *po.ServiceAccessControl, c *gin.Context) (err error) {
+	sqlStr := `UPDATE gateway_service_access_control
+			SET open_auth=?, black_list=?, white_list=?, clientip_flow_limit=?, service_flow_limit=?
+			WHERE service_id = ?`
+	trace := public.GetGinTraceContext(c)
+	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+		accessControl.OpenAuth,
+		accessControl.BlackList,
+		accessControl.WhiteList,
+		accessControl.ClientIPFlowLimit,
+		accessControl.ServiceFlowLimit,
+		accessControl.ServiceID)
+
+	return err
 }

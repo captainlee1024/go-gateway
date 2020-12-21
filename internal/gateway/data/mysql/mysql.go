@@ -193,6 +193,19 @@ func SqlxLogNamedExec(trace *mylog.TraceContext, sqlDB *sqlx.DB, query string,
 	return ret, err
 }
 
+// SqlxLogTxExec 执行事务 sql 并记录日志
+func SqlxLogTxExec(trace *mylog.TraceContext, tx *sqlx.Tx, query string,
+	args ...interface{}) (sql.Result, error) {
+	startExecTime := time.Now()
+	ret, err := tx.Exec(query, args...)
+	endExecTime := time.Now()
+	subTime := endExecTime.Sub(startExecTime).Seconds()
+
+	sqlxLog(trace, query, subTime, err, args...)
+
+	return ret, err
+}
+
 // sqlx 打印 sql 日志
 func sqlxLog(trace *mylog.TraceContext, query string, subTime float64, err error,
 	args ...interface{}) {
