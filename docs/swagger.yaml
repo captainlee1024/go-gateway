@@ -64,6 +64,141 @@ definitions:
         description: 用户 token
         type: string
     type: object
+  dto.AppAddInput:
+    properties:
+      app_id:
+        description: 租户ID
+        type: string
+      name:
+        description: 租户名称
+        type: string
+      qpd:
+        description: 日请求量限制
+        type: integer
+      qps:
+        description: 每秒请求量限制
+        type: integer
+      secret:
+        description: 秘钥
+        type: string
+      white_ips:
+        description: IP白名单，支持前缀匹配
+        type: string
+    required:
+    - app_id
+    - name
+    type: object
+  dto.AppDetailOutput:
+    properties:
+      app_id:
+        description: 租户ID
+        type: string
+      id:
+        type: integer
+      name:
+        description: 租户名称
+        type: string
+      qpd:
+        description: 日请求量限制
+        type: integer
+      qps:
+        description: 每秒请求量限制
+        type: integer
+      real_qpd:
+        description: 当前实际 QPD
+        type: integer
+      real_qps:
+        description: 当前实际 QPS
+        type: integer
+      secret:
+        description: 秘钥
+        type: string
+      white_ips:
+        description: IP白名单，支持前缀匹配
+        type: string
+    type: object
+  dto.AppListItemOutput:
+    properties:
+      app_id:
+        description: 租户ID
+        type: string
+      id:
+        type: integer
+      name:
+        description: 租户名称
+        type: string
+      qpd:
+        description: 日请求量限制
+        type: integer
+      qps:
+        description: 每秒请求量限制
+        type: integer
+      real_qpd:
+        description: 当前实际 QPD
+        type: integer
+      real_qps:
+        description: 当前实际 QPS
+        type: integer
+      secret:
+        description: 秘钥
+        type: string
+      white_ips:
+        description: IP白名单，支持前缀匹配
+        type: string
+    type: object
+  dto.AppListOutput:
+    properties:
+      list:
+        description: 租户列表
+        items:
+          $ref: '#/definitions/dto.AppListItemOutput'
+        type: array
+      total:
+        description: 租户总数
+        type: integer
+    type: object
+  dto.AppStatOutput:
+    properties:
+      today:
+        items:
+          type: integer
+        type: array
+      yesterday:
+        items:
+          type: integer
+        type: array
+    required:
+    - today
+    - yesterday
+    type: object
+  dto.AppUpdateInput:
+    properties:
+      app_id:
+        description: 租户ID
+        type: string
+      id:
+        description: 主键ID
+        type: integer
+      name:
+        description: 租户名称
+        type: string
+      qpd:
+        description: 日请求量限制
+        type: integer
+      qps:
+        description: 每秒请求量限制
+        type: integer
+      secret:
+        description: 秘钥
+        type: string
+      white_ips:
+        description: IP白名单，支持前缀匹配
+        type: string
+    required:
+    - id
+    - name
+    - secret
+    type: object
   dto.ChangePwdInput:
     properties:
       password:
@@ -711,6 +846,179 @@ paths:
       summary: 管理员退出
       tags:
       - 管理员接口
+  /app/app_add:
+    post:
+      consumes:
+      - application/json
+      description: 租户添加
+      operationId: /app/app_add
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AppAddInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 租户添加
+      tags:
+      - 租户管理
+  /app/app_delete:
+    get:
+      consumes:
+      - application/json
+      description: 租户删除
+      operationId: /app/app_delete
+      parameters:
+      - description: ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 租户删除
+      tags:
+      - 租户管理
+  /app/app_detail:
+    get:
+      consumes:
+      - application/json
+      description: 租户详情
+      operationId: /app/app_detail
+      parameters:
+      - description: ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AppDetailOutput'
+              type: object
+      summary: 租户详情
+      tags:
+      - 租户管理
+  /app/app_list:
+    get:
+      consumes:
+      - application/json
+      description: 租户列表
+      operationId: /app/app_list
+      parameters:
+      - description: 关键词
+        in: query
+        name: info
+        type: string
+      - description: 每页多少条
+        in: query
+        name: page_size
+        required: true
+        type: string
+      - description: 页码
+        in: query
+        name: page_no
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AppListOutput'
+              type: object
+      summary: 租户列表
+      tags:
+      - 租户管理
+  /app/app_stat:
+    get:
+      consumes:
+      - application/json
+      description: 租户流量统计
+      operationId: /app/app_stat
+      parameters:
+      - description: 租户ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AppStatOutput'
+              type: object
+      summary: 租户流量统计
+      tags:
+      - 租户管理
+  /app/app_update:
+    post:
+      consumes:
+      - application/json
+      description: 租户修改
+      operationId: /app/app_update
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AppUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 租户修改
+      tags:
+      - 租户管理
   /service/service_add_grpc:
     post:
       consumes:

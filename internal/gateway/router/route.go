@@ -71,5 +71,17 @@ func SetUp() *gin.Engine {
 		controller.ServiceRegister(serviceRouter)
 	}
 
+	appRouter := r.Group("/app")
+	appRouter.Use(
+		middleware.GinRecovery(true),
+		sessions.Sessions("mysession", store),
+		middleware.RequestLog(),
+		middleware.IPAuthMiddleware(),
+		middleware.SessionAuthMiddleware(),
+		middleware.TranslationMiddleware())
+	{
+		controller.AppRegister(appRouter)
+	}
+
 	return r
 }

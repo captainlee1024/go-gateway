@@ -105,10 +105,12 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 		}
 	}
 
+	//countSqlStr := `SELECT COUNT(*) FROM (SELECT * FROM gateway_service_info
+	//		WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0
+	//		LIMIT ?,?) a`
 	countSqlStr := `SELECT COUNT(*) FROM (SELECT * FROM gateway_service_info
-			WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0
-			LIMIT ?,?) a`
-	err = mysql.SqlxLogGet(trace, db, &total, countSqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
+			WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0) a`
+	err = mysql.SqlxLogGet(trace, db, &total, countSqlStr, "%"+info+"%", "%"+info+"%")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			total = 0
