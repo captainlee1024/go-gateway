@@ -18,6 +18,7 @@ type DashboardServiceStatOutput struct {
 }
 
 type DashboardServiceStatItemOutput struct {
-	Name  string `json:"name"`  // 服务类型
-	Value string `json:"value"` // 服务数量
+	Name     string `json:"name"`      // 服务类型
+	LoadType int    `json:"load_type"` // 服务类型的 int 表示
+	Value    string `json:"value"`     // 服务数量
 }

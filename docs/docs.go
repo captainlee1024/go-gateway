@@ -1362,6 +1362,10 @@ var doc = `{
         "dto.DashboardServiceStatItemOutput": {
             "type": "object",
             "properties": {
+                "load_type": {
+                    "description": "服务类型的 int 表示",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "服务类型",
                     "type": "string"

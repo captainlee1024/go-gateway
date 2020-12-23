@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	v1 "github.com/captainlee1024/go-gateway/api/gateway/v1"
 	"github.com/captainlee1024/go-gateway/internal/gateway/data"
 	"github.com/captainlee1024/go-gateway/internal/gateway/dto"
@@ -104,9 +105,15 @@ func (d *DashboardController) DashboardServiceStat(c *gin.Context) {
 	outPut := &dto.DashboardServiceStatOutput{}
 
 	for _, item := range statListDo {
+		name, ok := public.LoadTypeMap[item.Name]
+		if !ok {
+			middleware.ResponseError(c, 2002, errors.New("load_type not found"))
+			return
+		}
 		outItem := dto.DashboardServiceStatItemOutput{
-			Name:  public.LoadTypeMap[item.Name],
-			Value: item.Value,
+			Name:     name,
+			LoadType: item.Name,
+			Value:    item.Value,
 		}
 		outPut.Legend = append(outPut.Legend, outItem.Name)
 		outPut.Data = append(outPut.Data, outItem)
