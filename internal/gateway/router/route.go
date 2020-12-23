@@ -83,5 +83,17 @@ func SetUp() *gin.Engine {
 		controller.AppRegister(appRouter)
 	}
 
+	dashboardRouter := r.Group("/dashboard")
+	dashboardRouter.Use(
+		middleware.GinRecovery(true),
+		sessions.Sessions("mysession", store),
+		middleware.RequestLog(),
+		middleware.IPAuthMiddleware(),
+		middleware.SessionAuthMiddleware(),
+		middleware.TranslationMiddleware())
+	{
+		controller.DashboardRegister(dashboardRouter)
+	}
+
 	return r
 }

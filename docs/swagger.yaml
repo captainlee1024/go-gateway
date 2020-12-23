@@ -160,10 +160,12 @@ definitions:
   dto.AppStatOutput:
     properties:
       today:
+        description: 今日流量
         items:
           type: integer
         type: array
       yesterday:
+        description: 昨日流量
         items:
           type: integer
         type: array
@@ -207,6 +209,56 @@ definitions:
         type: string
     required:
     - password
+    type: object
+  dto.DashboardServiceStatItemOutput:
+    properties:
+      name:
+        description: 服务类型
+        type: string
+      value:
+        description: 服务数量
+        type: string
+    type: object
+  dto.DashboardServiceStatOutput:
+    properties:
+      data:
+        description: 各服务类型数据列表
+        items:
+          $ref: '#/definitions/dto.DashboardServiceStatItemOutput'
+        type: array
+      legend:
+        description: 服务类型列表
+        items:
+          type: string
+        type: array
+    type: object
+  dto.FlowStatOutput:
+    properties:
+      today:
+        description: 今日请求数
+        items:
+          type: integer
+        type: array
+      yesterday:
+        description: 昨日请求数
+        items:
+          type: integer
+        type: array
+    type: object
+  dto.PanelGroupDataOutput:
+    properties:
+      app_num:
+        description: 租户总数
+        type: integer
+      current_qps:
+        description: 当前总 QPS
+        type: integer
+      service_num:
+        description: 服务总数
+        type: integer
+      today_request_num:
+        description: 今日请求总数
+        type: integer
     type: object
   dto.ServiceAddGrpcInput:
     properties:
@@ -1019,6 +1071,69 @@ paths:
       summary: 租户修改
       tags:
       - 租户管理
+  /dashboard/flow_stat:
+    get:
+      consumes:
+      - application/json
+      description: 总流量统计
+      operationId: /dashboard/flow_stat
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FlowStatOutput'
+              type: object
+      summary: 总流量统计
+      tags:
+      - 首页大盘
+  /dashboard/panel_group_data:
+    get:
+      consumes:
+      - application/json
+      description: 指标统计
+      operationId: /dashboard/panel_group_data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PanelGroupDataOutput'
+              type: object
+      summary: 指标统计
+      tags:
+      - 首页大盘
+  /dashboard/service_stat:
+    get:
+      consumes:
+      - application/json
+      description: 服务占比统计
+      operationId: /dashboard/service_stat
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DashboardServiceStatOutput'
+              type: object
+      summary: 服务占比统计
+      tags:
+      - 首页大盘
   /service/service_add_grpc:
     post:
       consumes:

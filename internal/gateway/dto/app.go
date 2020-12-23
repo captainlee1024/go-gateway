@@ -98,6 +98,6 @@ func (params *AppStatInput) BindingValidParams(c *gin.Context) error {
 }
 
 type AppStatOutput struct {
-	Today     []int64 `json:"today" form:"today" comment:"今日统计" validate:"required"`
-	Yesterday []int64 `json:"yesterday" form:"yesterday" comment:"昨日统计" validate:"required"`
+	Today     []int64 `json:"today" form:"today" comment:"今日统计" validate:"required"`         // 今日流量
+	Yesterday []int64 `json:"yesterday" form:"yesterday" comment:"昨日统计" validate:"required"` // 昨日流量
 }

@@ -467,6 +467,114 @@
                 }
             }
         },
+        "/dashboard/flow_stat": {
+            "get": {
+                "description": "总流量统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "首页大盘"
+                ],
+                "summary": "总流量统计",
+                "operationId": "/dashboard/flow_stat",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FlowStatOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/panel_group_data": {
+            "get": {
+                "description": "指标统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "首页大盘"
+                ],
+                "summary": "指标统计",
+                "operationId": "/dashboard/panel_group_data",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PanelGroupDataOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/service_stat": {
+            "get": {
+                "description": "服务占比统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "首页大盘"
+                ],
+                "summary": "服务占比统计",
+                "operationId": "/dashboard/service_stat",
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DashboardServiceStatOutput"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/service/service_add_grpc": {
             "post": {
                 "description": "添加 GRPC 服务",
@@ -1170,12 +1278,14 @@
             ],
             "properties": {
                 "today": {
+                    "description": "今日流量",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "yesterday": {
+                    "description": "昨日流量",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -1231,6 +1341,78 @@
                     "description": "新密码",
                     "type": "string",
                     "example": "123456"
+                }
+            }
+        },
+        "dto.DashboardServiceStatItemOutput": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "服务类型",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "服务数量",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DashboardServiceStatOutput": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "各服务类型数据列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardServiceStatItemOutput"
+                    }
+                },
+                "legend": {
+                    "description": "服务类型列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.FlowStatOutput": {
+            "type": "object",
+            "properties": {
+                "today": {
+                    "description": "今日请求数",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "yesterday": {
+                    "description": "昨日请求数",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "dto.PanelGroupDataOutput": {
+            "type": "object",
+            "properties": {
+                "app_num": {
+                    "description": "租户总数",
+                    "type": "integer"
+                },
+                "current_qps": {
+                    "description": "当前总 QPS",
+                    "type": "integer"
+                },
+                "service_num": {
+                    "description": "服务总数",
+                    "type": "integer"
+                },
+                "today_request_num": {
+                    "description": "今日请求总数",
+                    "type": "integer"
                 }
             }
         },
