@@ -2,6 +2,9 @@ package controller
 
 import (
 	"errors"
+	"math/rand"
+	"time"
+
 	v1 "github.com/captainlee1024/go-gateway/api/gateway/v1"
 	"github.com/captainlee1024/go-gateway/internal/gateway/data"
 	"github.com/captainlee1024/go-gateway/internal/gateway/dto"
@@ -9,7 +12,6 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 func DashboardRegister(group *gin.RouterGroup) {
@@ -71,12 +73,12 @@ func (d *DashboardController) PanelGroupData(c *gin.Context) {
 func (d *DashboardController) FlowStat(c *gin.Context) {
 	var todayList []int64
 	for i := 0; i <= time.Now().Hour(); i++ {
-		todayList = append(todayList, 0)
+		todayList = append(todayList, int64(i*300))
 	}
 
 	var yesterdayList []int64
 	for i := 0; i <= 23; i++ {
-		yesterdayList = append(yesterdayList, 0)
+		yesterdayList = append(yesterdayList, int64(rand.Intn(10)*600))
 	}
 
 	outPut := &dto.FlowStatOutput{

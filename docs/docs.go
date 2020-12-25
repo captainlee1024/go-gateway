@@ -1115,16 +1115,16 @@ var doc = `{
                     "description": "登录时间",
                     "type": "string"
                 },
+                "name": {
+                    "description": "登录管理员姓名",
+                    "type": "string"
+                },
                 "roles": {
                     "description": ".",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
-                },
-                "user_name": {
-                    "description": "登录管理员姓名",
-                    "type": "string"
                 }
             }
         },
@@ -2007,28 +2007,28 @@ var doc = `{
         "po.ServiceAccessControl": {
             "type": "object",
             "properties": {
-                "blackList": {
+                "black_list": {
                     "type": "string"
                 },
-                "clientIPFlowLimit": {
+                "clientip_flow_limit": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "openAuth": {
+                "open_auth": {
                     "type": "integer"
                 },
-                "serviceFlowLimit": {
+                "service_flow_limit": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "service_id": {
                     "type": "integer"
                 },
-                "whiteHostName": {
+                "white_host_name": {
                     "type": "string"
                 },
-                "whiteList": {
+                "white_list": {
                     "type": "string"
                 }
             }
@@ -2036,7 +2036,7 @@ var doc = `{
         "po.ServiceGRPCRule": {
             "type": "object",
             "properties": {
-                "headerTransfor": {
+                "header_transfor": {
                     "type": "string"
                 },
                 "id": {
@@ -2045,7 +2045,7 @@ var doc = `{
                 "port": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "service_id": {
                     "type": "integer"
                 }
             }
@@ -2053,31 +2053,31 @@ var doc = `{
         "po.ServiceHTTPRule": {
             "type": "object",
             "properties": {
-                "headerTransfor": {
+                "header_transfor": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "needHTTPs": {
+                "need_https": {
                     "type": "integer"
                 },
-                "needStripUri": {
+                "need_strip_uri": {
                     "type": "integer"
                 },
-                "needWebsocket": {
+                "need_websocket": {
                     "type": "integer"
                 },
                 "rule": {
                     "type": "string"
                 },
-                "ruleType": {
+                "rule_type": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "service_id": {
                     "type": "integer"
                 },
-                "urlRewrite": {
+                "url_rewrite": {
                     "type": "string"
                 }
             }
@@ -2085,25 +2085,25 @@ var doc = `{
         "po.ServiceInfo": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "create_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "isDelete": {
+                "is_delete": {
                     "type": "integer"
                 },
-                "loadType": {
+                "load_type": {
                     "type": "integer"
                 },
-                "serviceDesc": {
+                "service_desc": {
                     "type": "string"
                 },
-                "serviceName": {
+                "service_name": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "update_at": {
                     "type": "string"
                 }
             }
@@ -2111,43 +2111,43 @@ var doc = `{
         "po.ServiceLoadBalance": {
             "type": "object",
             "properties": {
-                "checkInterval": {
+                "check_interval": {
                     "type": "integer"
                 },
-                "checkMethod": {
+                "check_method": {
                     "type": "integer"
                 },
-                "checkTimeout": {
+                "check_timeout": {
                     "type": "integer"
                 },
-                "forbidList": {
+                "forbid_list": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "iplist": {
+                "ip_list": {
                     "type": "string"
                 },
-                "roundType": {
+                "round_type": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "service_id": {
                     "type": "integer"
                 },
-                "upStreamConnectTimeout": {
+                "upstream_connect_timeout": {
                     "type": "integer"
                 },
-                "upStreamHeaderTimeout": {
+                "upstream_header_timeout": {
                     "type": "integer"
                 },
-                "upStreamIdleTimeout": {
+                "upstream_idle_timeout": {
                     "type": "integer"
                 },
-                "upStreamMaxIdle": {
+                "upstream_max_idle": {
                     "type": "integer"
                 },
-                "weightList": {
+                "weight_list": {
                     "type": "string"
                 }
             }
@@ -2161,7 +2161,7 @@ var doc = `{
                 "port": {
                     "type": "integer"
                 },
-                "serviceID": {
+                "service_id": {
                     "type": "integer"
                 }
             }

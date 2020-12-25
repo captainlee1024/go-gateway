@@ -8,7 +8,7 @@ import (
 
 type AdminInfoOutput struct {
 	ID           int       `json:"id"`           // 管理员 ID
-	Username     string    `json:"user_name"`    // 登录管理员姓名
+	Username     string    `json:"name"`         // 登录管理员姓名
 	LoginTime    time.Time `json:"login_time"`   // 登录时间
 	Avatar       string    `json:"avatar"`       // 登录用户头像
 	Introduction string    `json:"introduction"` // 介绍
