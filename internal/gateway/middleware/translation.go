@@ -246,7 +246,7 @@ func serviceIPListValid(val *validator.Validate, trans ut.Translator) {
 			return true
 		}
 		for _, item := range strings.Split(fl.Field().String(), ",") { // item->ip_addr
-			if matched, _ := regexp.Match(`^\d+$`, []byte(item)); !matched {
+			if matched, _ := regexp.Match(`^\S+$`, []byte(item)); !matched {
 				return false
 			}
 		}
