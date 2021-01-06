@@ -2,12 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
 	"github.com/captainlee1024/go-gateway/internal/gateway/router"
 	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
-	"github.com/captainlee1024/go-gateway/pkg/snowflake"
-	"log"
+	"github.com/captainlee1024/go-gateway/internal/proxy_service/http_proxy_router"
+	"github.com/captainlee1024/go-gateway/internal/proxy_service/po"
+	proxy "github.com/captainlee1024/go-gateway/internal/proxy_service/settings"
 	"os"
 	"os/signal"
 	"syscall"
@@ -75,50 +74,24 @@ func main() {
 		// 收到信号，开始平滑下线
 		router.HttpServerStop()
 	} else {
-		// 1. 加载配置
-		// 2. 初始化日志
-		if err := settings.Init(*config); err != nil {
+
+		if err := proxy.Init(*config); err != nil {
 			// log.Fatal(err)
 			panic(err)
 		}
+		defer proxy.Destroy()
 
-		trace := mylog.NewTrace()
-		// 3. 初始化 MySQL 连接
-		if err := settings.InitDBPool(); err != nil {
-			mylog.Log.Error("mysql", trace, mylog.DLTagUndefind, map[string]interface{}{
-				"error": err,
-			})
-		}
-		// 释放 mysql 资源，并且刷新缓冲里的日志信息
-		defer func() {
-			log.Println("------------------------------------------------------------------------")
-			log.Printf("[INFO] %s\n", " start destroy resources.")
-			settings.Close()
-			mylog.Log.L.Sync()
-			log.Printf("[INFO] %s\n", " success destroy resources.")
-		}()
-
-		// 4. 初始化 Redis 连接
-		defaultConn, err := settings.ConnFactory("default")
-		if err != nil {
-			mylog.Log.Error("redis", trace, mylog.DLTagUndefind, map[string]interface{}{
-				"error": err,
-			})
-		}
-		defer defaultConn.Close()
-
-		// 初始化雪花算法
-		if err := snowflake.Init(settings.ConfBase.StartTime, settings.ConfBase.MachineID); err != nil {
-			mylog.Log.Error("initSnowflake", trace, mylog.DLTagUndefind, map[string]interface{}{
-				"error": err,
-			})
-			return
-		}
+		// 加载服务信息到内存
+		po.ServiceManagerHandler.LoadOnce()
 
 		// 注册路由，开启服务
 		// 这里替换成启动代理服务的方法
-		//router.HttpServerRun()
-		fmt.Println("start proxyServer...")
+		go func() {
+			http_proxy_router.HttpServerRun()
+		}()
+		go func() {
+			http_proxy_router.HttpsServerRun()
+		}()
 
 		// 等待中断信号来优雅关闭服务器，为关闭服务器操作设置一个5秒的延时
 		quit := make(chan os.Signal, 1)
@@ -130,7 +103,8 @@ func main() {
 		<-quit
 
 		// 收到信号，开始平滑下线
-		//router.HttpServerStop()
+		http_proxy_router.HttpServerStop()
+		http_proxy_router.HttpsServerStop()
 	}
 
 }

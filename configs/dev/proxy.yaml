@@ -1,0 +1,27 @@
+# 程序基本信息
+name: "go-gateway" # 程序名称
+version: "v0.1" # 版本号
+mode: "dev" # 程序运行的模式，这里是开发模式
+start_time: "2020-12-15"
+time_location: "Asia/Shanghai"
+machine_id: 1
+
+http:
+  port: 8880
+  read_time: 10
+  write_time: 10
+  max_header_bytes: 20
+
+https:
+  port: 4433
+  read_time: 10
+  write_time: 10
+  max_header_bytes: 20
+
+## log
+log:
+  level: "debug" # x
+  filename: "./logs/proxy.log"
+  max_size: 200 # 日志最大容量（单位 MB）
+  max_age: 30 # 备份存储最大时间
+  max_backup: 7 # 日志最大备份数量

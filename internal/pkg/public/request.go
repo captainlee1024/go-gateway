@@ -5,12 +5,28 @@ import (
 	"strconv"
 
 	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
+	proxylog "github.com/captainlee1024/go-gateway/internal/proxy_service/log"
 	"github.com/gin-gonic/gin"
 )
 
 //const CtxUserIDKey = "userID"
 
 var ErrorUserNotLogin = errors.New("用户未登录")
+
+// ProxyGetGinTraceContext 从gin的Context中获取数据
+func ProxyGetGinTraceContext(c *gin.Context) *proxylog.TraceContext {
+	// 防御
+	if c == nil {
+		return proxylog.NewTrace()
+	}
+	traceContext, exists := c.Get(ContextTrace)
+	if exists {
+		if tc, ok := traceContext.(*proxylog.TraceContext); ok {
+			return tc
+		}
+	}
+	return proxylog.NewTrace()
+}
 
 // GetGinTraceContext 从gin的Context中获取数据
 func GetGinTraceContext(c *gin.Context) *mylog.TraceContext {
