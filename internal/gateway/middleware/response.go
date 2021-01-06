@@ -3,12 +3,11 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"net/http"
 	"strings"
 
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
-
-	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-
 	"log"
 	"net/http"
 	"os"
@@ -11,8 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/captainlee1024/go-gateway/internal/gateway/data/mysql"
-	"github.com/captainlee1024/go-gateway/internal/gateway/data/redis"
 	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
 	"github.com/captainlee1024/go-gateway/internal/gateway/router"
 	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
@@ -61,7 +58,7 @@ func main() {
 	trace := mylog.NewTrace()
 
 	// 3. 初始化 MySQL 连接
-	if err := mysql.InitDBPool(); err != nil {
+	if err := settings.InitDBPool(); err != nil {
 		mylog.Log.Error("mysql", trace, mylog.DLTagUndefind, map[string]interface{}{
 			"error": err,
 		})
@@ -70,13 +67,13 @@ func main() {
 	defer func() {
 		log.Println("------------------------------------------------------------------------")
 		log.Printf("[INFO] %s\n", " start destroy resources.")
-		mysql.Close()
+		settings.Close()
 		mylog.Log.L.Sync()
 		log.Printf("[INFO] %s\n", " success destroy resources.")
 	}()
 
 	// 4. 初始化 Redis 连接
-	defaultConn, err := redis.ConnFactory("default")
+	defaultConn, err := settings.ConnFactory("default")
 	if err != nil {
 		mylog.Log.Error("redis", trace, mylog.DLTagUndefind, map[string]interface{}{
 			"error": err,

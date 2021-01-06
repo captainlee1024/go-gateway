@@ -2,6 +2,7 @@ package data
 
 import (
 	"github.com/captainlee1024/go-gateway/internal/gateway/data/redis"
+	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	red "github.com/garyburd/redigo/redis"
 
@@ -13,7 +14,7 @@ func SetAToken(ID, token string, c *gin.Context) (err error) {
 	trace := public.GetGinTraceContext(c)
 
 	//_, err = redis.ConfDo(trace, "default", "SET", redis.GetRedisKey(redis.KeyFastGinJWTSetPrefix+ID), token, time.Hour*time.Duration(settings.GetIntConf("base.auth.jwt_expire")))
-	_, err = redis.ConfDo(trace, "default", "SET", redis.GetRedisKey(redis.KeyFastGinJWTSetPrefix+ID), token)
+	_, err = settings.ConfDo(trace, "default", "SET", redis.GetRedisKey(redis.KeyFastGinJWTSetPrefix+ID), token)
 
 	if err != nil {
 		return err
@@ -25,7 +26,7 @@ func SetAToken(ID, token string, c *gin.Context) (err error) {
 func GetAToken(ID string, c *gin.Context) (token string, err error) {
 	trace := public.GetGinTraceContext(c)
 
-	_token, err := redis.ConfDo(trace, "default", "GET", redis.GetRedisKey(redis.KeyFastGinJWTSetPrefix+ID))
+	_token, err := settings.ConfDo(trace, "default", "GET", redis.GetRedisKey(redis.KeyFastGinJWTSetPrefix+ID))
 	if err != nil {
 		return "", err
 	}

@@ -3,10 +3,10 @@ package data
 import (
 	"database/sql"
 	"errors"
-	"github.com/captainlee1024/go-gateway/internal/gateway/data/mysql"
 	"github.com/captainlee1024/go-gateway/internal/gateway/do"
 	"github.com/captainlee1024/go-gateway/internal/gateway/po"
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
+	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
 )
@@ -27,7 +27,7 @@ func (admin *adminLoginRepo) GetAdmin(loginDo *do.AdminLogin, c *gin.Context) (a
 	}
 
 	// 获取 db
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +35,9 @@ func (admin *adminLoginRepo) GetAdmin(loginDo *do.AdminLogin, c *gin.Context) (a
 	// 查询
 	trace := public.GetGinTraceContext(c)
 	sqlStr := `SELECT id, user_name, password, salt FROM gateway_admin WHERE user_name = ?`
-	err = mysql.SqlxLogGet(trace, db, adminPo, sqlStr, adminPo.Username)
+	err = settings.SqlxLogGet(trace, db, adminPo, sqlStr, adminPo.Username)
 	if err != nil {
-		if err != sql.ErrNoRows {
+		if err == sql.ErrNoRows {
 			return nil, errors.New("用户不存在！")
 		}
 		return nil, err

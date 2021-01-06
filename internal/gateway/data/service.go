@@ -2,10 +2,10 @@ package data
 
 import (
 	"database/sql"
-	"github.com/captainlee1024/go-gateway/internal/gateway/data/mysql"
 	"github.com/captainlee1024/go-gateway/internal/gateway/do"
 	"github.com/captainlee1024/go-gateway/internal/gateway/po"
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
+	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -82,7 +82,7 @@ func (repo *serviceRepo) GetServiceDetail(serviceInfo *po.ServiceInfo, c *gin.Co
 // GetServiceInfoList 获取列表并返回查询的条数
 func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.Context,
 ) (serviceInfoList []*po.ServiceInfo, total int64, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, 0, err
 	}
@@ -95,7 +95,7 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 			ORDER BY id DESC
 			LIMIT ?,?`
 	serviceInfoList = make([]*po.ServiceInfo, 0, 2)
-	err = mysql.SqlxLogSelect(trace, db, &serviceInfoList, sqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
+	err = settings.SqlxLogSelect(trace, db, &serviceInfoList, sqlStr, "%"+info+"%", "%"+info+"%", (page-1)*size, size)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			serviceInfoList = nil
@@ -110,7 +110,7 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 	//		LIMIT ?,?) a`
 	countSqlStr := `SELECT COUNT(*) FROM (SELECT * FROM gateway_service_info
 			WHERE (service_name LIKE ? OR service_desc LIKE ?) AND is_delete = 0) a`
-	err = mysql.SqlxLogGet(trace, db, &total, countSqlStr, "%"+info+"%", "%"+info+"%")
+	err = settings.SqlxLogGet(trace, db, &total, countSqlStr, "%"+info+"%", "%"+info+"%")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			total = 0
@@ -123,7 +123,7 @@ func (repo *serviceRepo) GetServiceInfoList(info string, page, size int, c *gin.
 }
 
 func (repo *serviceRepo) GetServiceInfoByID(ID int64, c *gin.Context) (serviceInfoPo *po.ServiceInfo, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (repo *serviceRepo) GetServiceInfoByID(ID int64, c *gin.Context) (serviceIn
 			FROM gateway_service_info
 			WHERE is_delete = 0
 			AND id = ?`
-	if err = mysql.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrServiceNotExit
 		} else {
@@ -146,7 +146,7 @@ func (repo *serviceRepo) GetServiceInfoByID(ID int64, c *gin.Context) (serviceIn
 }
 
 func (repo *serviceRepo) GetServiceInfoByName(serviceName string, c *gin.Context) (serviceInfoPo *po.ServiceInfo, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (repo *serviceRepo) GetServiceInfoByName(serviceName string, c *gin.Context
 			FROM gateway_service_info
 			WHERE is_delete = 0
 			AND service_name = ?`
-	if err = mysql.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, serviceName); err != nil {
+	if err = settings.SqlxLogGet(trace, db, serviceInfoPo, sqlStr, serviceName); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrServiceNotExit
 		} else {
@@ -172,7 +172,7 @@ func (repo *serviceRepo) InsertServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceI
 			load_type, service_name, service_desc, create_at, update_at, is_delete)
 			values(?,?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	ret, err := mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	ret, err := settings.SqlxLogTxExec(trace, tx, sqlStr,
 		serviceInfo.LoadType,
 		serviceInfo.ServiceName,
 		serviceInfo.ServiceDesc,
@@ -191,7 +191,7 @@ func (repo *serviceRepo) InsertServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceI
 }
 
 func (repo *serviceRepo) DeleteServiceInfo(serviceInfoPo *po.ServiceInfo, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (repo *serviceRepo) DeleteServiceInfo(serviceInfoPo *po.ServiceInfo, c *gin
 	sqlStr := `UPDATE gateway_service_info
 			SET is_delete = 1
 			WHERE id = ?`
-	if _, err = mysql.SqlxLogExec(trace, db, sqlStr, serviceInfoPo.ID); err != nil {
+	if _, err = settings.SqlxLogExec(trace, db, sqlStr, serviceInfoPo.ID); err != nil {
 		return err
 	}
 	return nil
@@ -211,7 +211,7 @@ func (repo *serviceRepo) UpdateServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceI
 			SET service_desc = ?, update_at = ?
 			WHERE id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceInfo.ServiceDesc, time.Now(), serviceInfo.ID)
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr, serviceInfo.ServiceDesc, time.Now(), serviceInfo.ID)
 	return err
 }
 
@@ -219,7 +219,7 @@ func (repo *serviceRepo) UpdateServiceInfo(tx *sqlx.Tx, serviceInfo *po.ServiceI
 // GetServiceHTTPRuleByID 根据 ID 查询一条 service_http_rule 数据
 func (repo *serviceRepo) GetServiceHTTPRuleByID(ID int64, c *gin.Context,
 ) (httpRule *po.ServiceHTTPRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (repo *serviceRepo) GetServiceHTTPRuleByID(ID int64, c *gin.Context,
 	httpRule = new(po.ServiceHTTPRule)
 	trace := public.GetGinTraceContext(c)
 	httpRuleSqlStr := `SELECT * FROM gateway_service_http_rule WHERE service_id=?`
-	if err = mysql.SqlxLogGet(trace, db, httpRule, httpRuleSqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, httpRule, httpRuleSqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -238,7 +238,7 @@ func (repo *serviceRepo) GetServiceHTTPRuleByID(ID int64, c *gin.Context,
 }
 
 func (repo *serviceRepo) GetServiceHTTPRuleByRule(ruleType int, rule string, c *gin.Context) (httpRule *po.ServiceHTTPRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (repo *serviceRepo) GetServiceHTTPRuleByRule(ruleType int, rule string, c *
 	httpRule = new(po.ServiceHTTPRule)
 	trace := public.GetGinTraceContext(c)
 	httpRuleSqlStr := `SELECT * FROM gateway_service_http_rule WHERE rule_type = ? AND rule=?`
-	if err = mysql.SqlxLogGet(trace, db, httpRule, httpRuleSqlStr, ruleType, rule); err != nil {
+	if err = settings.SqlxLogGet(trace, db, httpRule, httpRuleSqlStr, ruleType, rule); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}
@@ -257,7 +257,7 @@ func (repo *serviceRepo) GetServiceHTTPRuleByRule(ruleType int, rule string, c *
 }
 
 func (repo *serviceRepo) AddHTTPDetail(httpDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func (repo *serviceRepo) InsertServiceHTTPRule(tx *sqlx.Tx, httpRule *po.Service
 			VALUES(?,?,?,?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
 
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		httpRule.ServiceID,
 		httpRule.RuleType,
 		httpRule.Rule,
@@ -332,7 +332,7 @@ func (repo *serviceRepo) InsertServiceHTTPRule(tx *sqlx.Tx, httpRule *po.Service
 }
 
 func (repo *serviceRepo) UpdateHTTPDetail(httpDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -376,7 +376,7 @@ func (repo *serviceRepo) UpdateHTTPRule(tx *sqlx.Tx, serviceHTTPRule *po.Service
 			SET need_https=?, need_strip_uri=?, need_websocket=?, url_rewrite=?, header_transfor=?
 			WHERE service_id=?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		serviceHTTPRule.NeedHTTPs,
 		serviceHTTPRule.NeedStripUri,
 		serviceHTTPRule.NeedWebsocket,
@@ -390,7 +390,7 @@ func (repo *serviceRepo) UpdateHTTPRule(tx *sqlx.Tx, serviceHTTPRule *po.Service
 // GetServiceTCPRuleByID 根据 ID 查询一条 service_tcp_rule 记录
 func (repo *serviceRepo) GetServiceTCPRuleByID(ID int64, c *gin.Context,
 ) (tcpRule *po.ServiceTCPRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (repo *serviceRepo) GetServiceTCPRuleByID(ID int64, c *gin.Context,
 	tcpRule = new(po.ServiceTCPRule)
 	trace := public.GetGinTraceContext(c)
 	httpRuleSqlStr := `SELECT * FROM gateway_service_tcp_rule WHERE service_id=?`
-	if err = mysql.SqlxLogGet(trace, db, tcpRule, httpRuleSqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, tcpRule, httpRuleSqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -412,7 +412,7 @@ func (repo *serviceRepo) InsertServiceTCPRule(tx *sqlx.Tx, tcpRule *po.ServiceTC
 			VALUES(?,?)`
 
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		tcpRule.ServiceID,
 		tcpRule.Port); err != nil {
 		return err
@@ -421,7 +421,7 @@ func (repo *serviceRepo) InsertServiceTCPRule(tx *sqlx.Tx, tcpRule *po.ServiceTC
 }
 
 func (repo *serviceRepo) AddTCPDetail(tcpDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -468,7 +468,7 @@ func (repo *serviceRepo) AddTCPDetail(tcpDetail *do.ServiceDetail, c *gin.Contex
 }
 
 func (repo *serviceRepo) UpdateTCPDetail(tcpDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -513,7 +513,7 @@ func (repo *serviceRepo) UpdateTCPRule(tx *sqlx.Tx, serviceTCPRule *po.ServiceTC
 }
 
 func (repo *serviceRepo) GetServiceTCPRuleByPort(port int, c *gin.Context) (serviceTCPRule *po.ServiceTCPRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +522,7 @@ func (repo *serviceRepo) GetServiceTCPRuleByPort(port int, c *gin.Context) (serv
 	sqlStr := `SELECT * FROM gateway_service_tcp_rule
 			WHERE port = ?`
 	serviceTCPRule = &po.ServiceTCPRule{}
-	if err = mysql.SqlxLogGet(trace, db, serviceTCPRule, sqlStr, port); err != nil {
+	if err = settings.SqlxLogGet(trace, db, serviceTCPRule, sqlStr, port); err != nil {
 		return nil, err
 	}
 
@@ -533,7 +533,7 @@ func (repo *serviceRepo) GetServiceTCPRuleByPort(port int, c *gin.Context) (serv
 // GetServiceGRPCRuleByID 根据 ID 查询一条 Service
 func (repo *serviceRepo) GetServiceGRPCRuleByID(ID int64, c *gin.Context,
 ) (grpcRule *po.ServiceGRPCRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +541,7 @@ func (repo *serviceRepo) GetServiceGRPCRuleByID(ID int64, c *gin.Context,
 	grpcRule = new(po.ServiceGRPCRule)
 	trace := public.GetGinTraceContext(c)
 	httpRuleSqlStr := `SELECT * FROM gateway_service_grpc_rule WHERE service_id=?`
-	if err = mysql.SqlxLogGet(trace, db, grpcRule, httpRuleSqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, grpcRule, httpRuleSqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -555,7 +555,7 @@ func (repo *serviceRepo) InsertServiceGRPCRule(tx *sqlx.Tx, grpcRule *po.Service
 			service_id, port, header_transfor)
 			VALUES(?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		grpcRule.ServiceID,
 		grpcRule.Port,
 		grpcRule.HeaderTransfor); err != nil {
@@ -565,7 +565,7 @@ func (repo *serviceRepo) InsertServiceGRPCRule(tx *sqlx.Tx, grpcRule *po.Service
 }
 
 func (repo *serviceRepo) AddGRPCDetail(grpcDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -612,7 +612,7 @@ func (repo *serviceRepo) AddGRPCDetail(grpcDetail *do.ServiceDetail, c *gin.Cont
 }
 
 func (repo *serviceRepo) UpdateGrpcDetail(grpcDetail *do.ServiceDetail, c *gin.Context) (err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return err
 	}
@@ -656,12 +656,12 @@ func (repo *serviceRepo) UpdateGRPCRule(tx *sqlx.Tx, serviceGRPCRule *po.Service
 			SET header_transfor=?
 			WHERE service_id=?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr, serviceGRPCRule.HeaderTransfor, serviceGRPCRule.ServiceID)
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr, serviceGRPCRule.HeaderTransfor, serviceGRPCRule.ServiceID)
 	return err
 }
 
 func (repo *serviceRepo) GetServiceGRPCRuleByPort(port int, c *gin.Context) (serviceGRPCRUle *po.ServiceGRPCRule, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -670,7 +670,7 @@ func (repo *serviceRepo) GetServiceGRPCRuleByPort(port int, c *gin.Context) (ser
 	sqlStr := `SELECT * FROM gateway_service_grpc_rule
 			WHERE port = ?`
 	serviceGRPCRUle = &po.ServiceGRPCRule{}
-	if err = mysql.SqlxLogGet(trace, db, serviceGRPCRUle, sqlStr, port); err != nil {
+	if err = settings.SqlxLogGet(trace, db, serviceGRPCRUle, sqlStr, port); err != nil {
 		return nil, err
 	}
 
@@ -681,7 +681,7 @@ func (repo *serviceRepo) GetServiceGRPCRuleByPort(port int, c *gin.Context) (ser
 // GetServiceLoadBalanceByID 根据 ID 查询一条 service_load_balance　记录
 func (repo *serviceRepo) GetServiceLoadBalanceByID(ID int64, c *gin.Context,
 ) (loadBalance *po.ServiceLoadBalance, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -689,7 +689,7 @@ func (repo *serviceRepo) GetServiceLoadBalanceByID(ID int64, c *gin.Context,
 	loadBalance = new(po.ServiceLoadBalance)
 	trace := public.GetGinTraceContext(c)
 	loadBalanceSqlStr := `SELECT * FROM gateway_service_load_balance WHERE service_id=?`
-	if err = mysql.SqlxLogGet(trace, db, loadBalance, loadBalanceSqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, loadBalance, loadBalanceSqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -705,7 +705,7 @@ func (repo *serviceRepo) InsertServiceHTTPLoadBalance(tx *sqlx.Tx, loadBalance *
 			upstream_idle_timeout, upstream_max_idle)
 			VALUES(?,?,?,?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		loadBalance.ServiceID,
 		loadBalance.RoundType,
 		loadBalance.IPList,
@@ -726,7 +726,7 @@ func (repo *serviceRepo) UpdateHTTPLoadBalance(tx *sqlx.Tx, loadBalance *po.Serv
 			upstream_idle_timeout=?, upstream_max_idle=?
 			WHERE service_id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		loadBalance.RoundType,
 		loadBalance.IPList,
 		loadBalance.WeightList,
@@ -744,7 +744,7 @@ func (repo *serviceRepo) InsertServiceGRPCTCPLoadBalance(tx *sqlx.Tx, loadBalanc
 			service_id, round_type, ip_list, weight_list, forbid_list)
 			VALUES(?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		loadBalance.ServiceID,
 		loadBalance.RoundType,
 		loadBalance.IPList,
@@ -760,7 +760,7 @@ func (repo *serviceRepo) UpdateGRPCTCPLoadBalance(tx *sqlx.Tx, loadBalance *po.S
 			SET round_type=?, ip_list=?, weight_list=?, forbid_list=?
 			WHERE service_id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		loadBalance.RoundType,
 		loadBalance.IPList,
 		loadBalance.WeightList,
@@ -774,7 +774,7 @@ func (repo *serviceRepo) UpdateGRPCTCPLoadBalance(tx *sqlx.Tx, loadBalance *po.S
 // GetServiceAccessControllerByID 根据 ID 查询一条 service_access_control 记录
 func (repo *serviceRepo) GetServiceAccessControllerByID(ID int64, c *gin.Context,
 ) (accessController *po.ServiceAccessControl, err error) {
-	db, err := mysql.GetDBPool("default")
+	db, err := settings.GetDBPool("default")
 	if err != nil {
 		return nil, err
 	}
@@ -782,7 +782,7 @@ func (repo *serviceRepo) GetServiceAccessControllerByID(ID int64, c *gin.Context
 	accessController = new(po.ServiceAccessControl)
 	trace := public.GetGinTraceContext(c)
 	accessControlSqlStr := `SELECT * FROM gateway_service_access_control WHERE service_id=?`
-	if err = mysql.SqlxLogGet(trace, db, accessController, accessControlSqlStr, ID); err != nil {
+	if err = settings.SqlxLogGet(trace, db, accessController, accessControlSqlStr, ID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -796,7 +796,7 @@ func (repo *serviceRepo) InsertServiceHTTPAccessControl(tx *sqlx.Tx, accessContr
 			service_id, open_auth, black_list, white_list, clientip_flow_limit, service_flow_limit)
 			VALUES(?,?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		accessControl.ServiceID,
 		accessControl.OpenAuth,
 		accessControl.BlackList,
@@ -813,7 +813,7 @@ func (repo *serviceRepo) UpdateHTTPAccessControl(tx *sqlx.Tx, accessControl *po.
 			SET open_auth=?, black_list=?, white_list=?, clientip_flow_limit=?, service_flow_limit=?
 			WHERE service_id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		accessControl.OpenAuth,
 		accessControl.BlackList,
 		accessControl.WhiteList,
@@ -829,7 +829,7 @@ func (repo *serviceRepo) InsertServiceGRPCTCPAccessControl(tx *sqlx.Tx, accessCo
 			service_id, open_auth, black_list, white_list, clientip_flow_limit, service_flow_limit, white_host_name)
 			VALUES(?,?,?,?,?,?,?)`
 	trace := public.GetGinTraceContext(c)
-	if _, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	if _, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		accessControl.ServiceID,
 		accessControl.OpenAuth,
 		accessControl.BlackList,
@@ -846,7 +846,7 @@ func (repo *serviceRepo) UpdateGRPCTCPAccessControl(tx *sqlx.Tx, accessControl *
 			SET open_auth=?, black_list=?, white_list=?, clientip_flow_limit=?, service_flow_limit=?, white_host_name=?
 			WHERE service_id = ?`
 	trace := public.GetGinTraceContext(c)
-	_, err = mysql.SqlxLogTxExec(trace, tx, sqlStr,
+	_, err = settings.SqlxLogTxExec(trace, tx, sqlStr,
 		accessControl.OpenAuth,
 		accessControl.BlackList,
 		accessControl.WhiteList,

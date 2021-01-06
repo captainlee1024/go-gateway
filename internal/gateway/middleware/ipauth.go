@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fmt"
-
 	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
+
 	"github.com/gin-gonic/gin"
 )
 

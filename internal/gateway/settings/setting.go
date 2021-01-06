@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
+	"github.com/captainlee1024/go-gateway/pkg/snowflake"
 	"log"
 	"net"
 	"os"
@@ -35,13 +37,13 @@ func Init(configPath string) error {
 // 3. 加载 redis 配置
 // 4. 初始化日志
 func InitModule(configPath string, modules []string) error {
-	conf := flag.String("conf", configPath, "imput config fiel like: ../../configs/dev")
+	conf := flag.String("conf", configPath, "input config file like: ../../configs/dev")
 	flag.Parse()
 	if *conf == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
-	log.Println(time.Now().Format("")+"------------------------------------------------------------------------")
+	log.Println(time.Now().Format("") + "------------------------------------------------------------------------")
 	log.Printf("[INFO] config=%s\n", *conf)
 	log.Printf("[INFO] start loading resources.\n")
 
@@ -93,9 +95,42 @@ func InitModule(configPath string, modules []string) error {
 	}
 	TimeLocation = location
 
+	trace := mylog.NewTrace()
+	// 3. 初始化 MySQL 连接
+	if err := InitDBPool(); err != nil {
+		mylog.Log.Error("mysql", trace, mylog.DLTagUndefind, map[string]interface{}{
+			"error": err,
+		})
+	}
+
+	// 4. 初始化 Redis 连接
+	defaultConn, err := ConnFactory("default")
+	if err != nil {
+		mylog.Log.Error("redis", trace, mylog.DLTagUndefind, map[string]interface{}{
+			"error": err,
+		})
+	}
+	defer defaultConn.Close()
+
+	// 初始化雪花算法
+	if err := snowflake.Init(ConfBase.StartTime, ConfBase.MachineID); err != nil {
+		mylog.Log.Error("initSnowflake", trace, mylog.DLTagUndefind, map[string]interface{}{
+			"error": err,
+		})
+		return err
+	}
+
 	log.Printf("[INFO] success loading resources.\n")
 	log.Println("------------------------------------------------------------------------")
 	return nil
+}
+
+func Destroy() {
+	log.Println("------------------------------------------------------------------------")
+	log.Printf("[INFO] %s\n", " start destroy resources.")
+	Close()
+	mylog.Log.L.Sync()
+	log.Printf("[INFO] %s\n", " success destroy resources.")
 }
 
 // GetLocalIPs 获取 IP 列表

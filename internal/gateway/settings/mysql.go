@@ -1,4 +1,4 @@
-package mysql
+package settings
 
 import (
 	"database/sql"
@@ -13,7 +13,6 @@ import (
 
 	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
 
-	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	// 初始化数据库驱动
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -29,15 +28,15 @@ var (
 )
 
 // Init 初始化 MySQL
-func Init() {
-
-}
+//func Init() {
+//
+//}
 
 // InitDBPool 初始化数据库连接池
 func InitDBPool() error {
 	// sqlx
-	if len(settings.ConfMySQLMap.List) == 0 {
-		fmt.Printf("[INFO] %s%s\n", time.Now().Format(settings.TimeFormat), "empty mysql config.")
+	if len(ConfMySQLMap.List) == 0 {
+		fmt.Printf("[INFO] %s%s\n", time.Now().Format(TimeFormat), "empty mysql config.")
 	}
 
 	DBMapPool = map[string]*sqlx.DB{}
@@ -45,7 +44,7 @@ func InitDBPool() error {
 
 	var dsn string
 	//
-	for confName, DBConf := range settings.ConfMySQLMap.List {
+	for confName, DBConf := range ConfMySQLMap.List {
 
 		// sqlx
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true",

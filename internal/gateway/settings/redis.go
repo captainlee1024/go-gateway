@@ -1,4 +1,4 @@
-package redis
+package settings
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	mylog "github.com/captainlee1024/go-gateway/internal/gateway/log"
-	"github.com/captainlee1024/go-gateway/internal/gateway/settings"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -48,8 +47,8 @@ func Close() {
 
 // ConnFactory 获取连接
 func ConnFactory(name string) (redis.Conn, error) {
-	if settings.ConfRedisMap != nil && settings.ConfRedisMap.List != nil {
-		for confName, cfg := range settings.ConfRedisMap.List {
+	if ConfRedisMap != nil && ConfRedisMap.List != nil {
+		for confName, cfg := range ConfRedisMap.List {
 			if name == confName {
 				// randHost := cfg.ProxyList[rand.Intn(len(cfg.ProxyList))]
 				randHost := cfg.Host + fmt.Sprintf(":%d", cfg.Port)
