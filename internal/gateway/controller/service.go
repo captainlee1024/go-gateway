@@ -2,10 +2,6 @@ package controller
 
 import (
 	"errors"
-	"math/rand"
-	"strings"
-	"time"
-
 	v1 "github.com/captainlee1024/go-gateway/api/gateway/v1"
 	"github.com/captainlee1024/go-gateway/internal/gateway/data"
 	"github.com/captainlee1024/go-gateway/internal/gateway/do"
@@ -13,6 +9,7 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/gateway/middleware"
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
 	"github.com/gin-gonic/gin"
+	"strings"
 )
 
 func ServiceRegister(group *gin.RouterGroup) {
@@ -220,15 +217,20 @@ func (s *ServiceController) ServiceStat(c *gin.Context) {
 	}
 
 	var todayList []int64
-	for i := 0; i <= time.Now().Hour(); i++ {
-		todayList = append(todayList, int64(i*200))
-	}
+	//for i := 0; i <= time.Now().Hour(); i++ {
+	//	todayList = append(todayList, int64(i*200))
+	//}
 
 	var yesterdayList []int64
-	for i := 0; i <= 23; i++ {
-		yesterdayList = append(yesterdayList, int64(rand.Intn(10)*600))
-	}
+	//for i := 0; i <= 23; i++ {
+	//	yesterdayList = append(yesterdayList, int64(rand.Intn(10)*600))
+	//}
 
+	todayList, yesterdayList, err := s.useCase.ServiceStat(params.ID, c)
+	if err != nil {
+		middleware.ResponseError(c, 2014, err)
+		return
+	}
 	middleware.ResponseSuccess(c, &dto.ServiceStatOutput{
 		Today:     todayList,
 		Yesterday: yesterdayList,

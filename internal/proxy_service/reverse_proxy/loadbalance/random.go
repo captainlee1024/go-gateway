@@ -21,11 +21,11 @@ func (r *RandomBalance) Add(params ...string) error {
 		return errors.New("param len 1 at least")
 	}
 
-	for _, addr := range params {
-		r.rss = append(r.rss, addr)
-	}
-	// addr := params[0]
-	// r.rss = append(r.rss, addr)
+	//for _, addr := range params {
+	//	r.rss = append(r.rss, addr)
+	//}
+	addr := params[0]
+	r.rss = append(r.rss, addr)
 	return nil
 }
 
@@ -53,7 +53,7 @@ func (r *RandomBalance) SetConf(conf Conf) {
 // Update 更新配置
 func (r *RandomBalance) Update() {
 	if conf, ok := r.conf.(*ZKConf); ok {
-		fmt.Println("Update get conf:", conf.GetConf())
+		fmt.Println("RandomBalance get conf:", conf.GetConf())
 		r.rss = []string{}
 		for _, ip := range conf.GetConf() {
 			r.Add(strings.Split(ip, ",")...)
@@ -61,7 +61,7 @@ func (r *RandomBalance) Update() {
 	}
 
 	if conf, ok := r.conf.(*CheckConf); ok {
-		fmt.Println("Update get conf:", conf.GetConf())
+		fmt.Println("RandomBalance get conf:", conf.GetConf())
 		// r.rss = nil
 		r.rss = []string{}
 		for _, ip := range conf.GetConf() {

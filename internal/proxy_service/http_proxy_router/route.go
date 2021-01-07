@@ -24,6 +24,13 @@ func setUp() *gin.Engine {
 	})
 
 	r.Use(http_middleware.HTTPAccessModeMiddleware(),
+		http_middleware.HTTPFlowCountMiddleware(),
+		http_middleware.HTTPFlowLimitMiddleware(),
+		http_middleware.HTTPWhiteListMiddleware(),
+		http_middleware.HTTPBlackListMiddleware(),
+		http_middleware.HTTPHeaderTransferMiddleware(),
+		http_middleware.HTTPStripURIMiddleware(),
+		http_middleware.HTTPURLRewriteMiddleware(),
 		http_middleware.HTTPReverseProxyMiddleware())
 	return r
 }

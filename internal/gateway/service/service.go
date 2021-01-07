@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/captainlee1024/go-gateway/internal/gateway/data/flowcount"
 	"github.com/captainlee1024/go-gateway/internal/gateway/do"
 	"github.com/captainlee1024/go-gateway/internal/gateway/dto"
 	"github.com/captainlee1024/go-gateway/internal/gateway/po"
@@ -117,14 +118,19 @@ func (useCase *ServiceUseCase) GetServiceList(serviceDo *do.ServiceListInput, c 
 
 		// 获取的 ip 字符串用 , 分割，取出里面的 IP 列表
 		ipList := strings.Split(serviceDetail.LoadBalance.IPList, ",")
+		// 获取流量信息
+		serviceCounter, err := flowcount.FlowCounterHandler.GetCounter(public.FlowServicePrefix + listItem.ServiceName)
+		if err != nil {
+			return nil, err
+		}
 		outPutItem := dto.ServiceListItemOutput{
 			ID:          serviceDetail.Info.ID,
 			ServiceName: serviceDetail.Info.ServiceName,
 			ServiceDesc: serviceDetail.Info.ServiceDesc,
 			ServiceAddr: serviceAddr,
 			LoadType:    listItem.LoadType,
-			Qps:         0,
-			Qpd:         0,
+			Qps:         int(serviceCounter.QPS),
+			Qpd:         int(serviceCounter.TotalCount),
 			TotalNode:   len(ipList),
 		}
 		outPutList = append(outPutList, outPutItem)
@@ -150,6 +156,39 @@ func (useCase *ServiceUseCase) DeleteServiceInfo(serviceDeleteInput *dto.Service
 	}
 
 	return nil
+}
+
+// ServiceStat 获取流量统计信息
+func (useCase *ServiceUseCase) ServiceStat(serviceID int64, c *gin.Context) (todayList, yesterdayList []int64, err error) {
+	serviceInfo, err := useCase.repo.GetServiceInfoByID(serviceID, c)
+	if err != nil {
+		return nil, nil, err
+	}
+	serviceDetail, err := useCase.repo.GetServiceDetail(serviceInfo, c)
+	if err != nil {
+		return nil, nil, err
+	}
+	serviceCounter, err := flowcount.FlowCounterHandler.GetCounter(public.FlowServicePrefix + serviceDetail.Info.ServiceName)
+	if err != nil {
+		return nil, nil, err
+	}
+	todayList = make([]int64, 0, 2)
+	currentTime := time.Now()
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	for i := 0; i <= currentTime.Hour(); i++ {
+		dataTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), i, 0, 0, 0, loc)
+		hourData, _ := serviceCounter.GetHourData(dataTime)
+		todayList = append(todayList, hourData)
+	}
+
+	yesterdayList = make([]int64, 0, 2)
+	yesterdayTime := currentTime.Add(-1 * time.Duration(time.Hour*24))
+	for i := 0; i <= currentTime.Hour(); i++ {
+		dataTime := time.Date(yesterdayTime.Year(), yesterdayTime.Month(), yesterdayTime.Day(), i, 0, 0, 0, loc)
+		hourData, _ := serviceCounter.GetHourData(dataTime)
+		yesterdayList = append(yesterdayList, hourData)
+	}
+	return
 }
 
 // AddHTTP 添加 HTTP 服务逻辑处理

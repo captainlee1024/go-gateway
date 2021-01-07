@@ -88,10 +88,10 @@ func (lbr *LoadBalancer) GetLoadBalancer(service *ServiceDetail) (loadbalance.Lo
 		schema = "https" // 如果开启 https 支持，设置协议为 https
 	}
 
-	prefix := ""
-	if service.HTTPRule.RuleType == public.HTTPRuleTypePrefixURL {
-		prefix = service.HTTPRule.Rule
-	}
+	//prefix := ""
+	//if service.HTTPRule.RuleType == public.HTTPRuleTypePrefixURL {
+	//	prefix = service.HTTPRule.Rule
+	//}
 	ipList := service.LoadBalance.GetIpListByModel()
 	weightList := service.LoadBalance.GetWeightListByModel()
 	ipConf := map[string]string{}
@@ -101,7 +101,7 @@ func (lbr *LoadBalancer) GetLoadBalancer(service *ServiceDetail) (loadbalance.Lo
 	mConf, err := loadbalance.NewCheckConf(
 		// 基于 http rule 设置 schema 和接入类型
 		// 负载的 IP和权重
-		fmt.Sprintf("%s://%s%s", schema, "%s", prefix), ipConf)
+		fmt.Sprintf("%s://%s", schema, "%s"), ipConf)
 	// nil)
 	if err != nil {
 		return nil, err

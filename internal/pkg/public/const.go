@@ -42,3 +42,14 @@ var (
 		LoadTypeGRPC: "GRPC",
 	}
 )
+
+const (
+	// 流量统计的 Key
+	RedisFlowDayKey  = "flow_day_count"
+	RedisFlowHourKey = "flow_hour_count"
+
+	// 流量前缀
+	FlowTotal          = "flow_total"
+	FlowServicePrefix  = "flow_service_"
+	FlowCountAppPrefix = "flow_app_"
+)
