@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"github.com/captainlee1024/go-gateway/internal/gateway/data/flowcount"
 	"github.com/captainlee1024/go-gateway/internal/gateway/dto"
 	"github.com/captainlee1024/go-gateway/internal/gateway/po"
+	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -38,6 +40,11 @@ func (useCase *AppUseCase) AppList(appListInput *dto.AppListInput, c *gin.Contex
 
 	// 组装数据返回
 	for _, item := range appList {
+		appCounter, err := flowcount.FlowCounterHandler.GetCounter(
+			public.FlowAppPrefix + item.AppID)
+		if err != nil {
+			return nil, err
+		}
 		outItem := dto.AppListItemOutput{
 			AppID:    item.AppID,
 			Name:     item.Name,
@@ -46,6 +53,8 @@ func (useCase *AppUseCase) AppList(appListInput *dto.AppListInput, c *gin.Contex
 			Qps:      item.Qps,
 			Qpd:      item.Qpd,
 			ID:       item.ID,
+			RealQps:  appCounter.QPS,
+			RealQpd:  appCounter.TotalCount,
 		}
 		outPutList.List = append(outPutList.List, outItem)
 	}
@@ -121,4 +130,34 @@ func (useCase *AppUseCase) AppUpdate(appUpdateInput *dto.AppUpdateInput, c *gin.
 	}
 
 	return useCase.repo.UpdateApp(appPo, c)
+}
+
+// AppStat 获取租户流量统计信息
+func (useCase *AppUseCase) AppStat(ID int64, c *gin.Context) (todayList, yesterdayList []int64, err error) {
+	appInfo, err := useCase.repo.GetAppDetailByID(ID, c)
+	if err != nil {
+		return nil, nil, err
+	}
+	appCounter, err := flowcount.FlowCounterHandler.GetCounter(
+		public.FlowAppPrefix + appInfo.AppID)
+	if err != nil {
+		return nil, nil, err
+	}
+	todayList = make([]int64, 0, 2)
+	currentTime := time.Now()
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	for i := 0; i <= currentTime.Hour(); i++ {
+		dataTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), i, 0, 0, 0, loc)
+		hourData, _ := appCounter.GetHourData(dataTime)
+		todayList = append(todayList, hourData)
+	}
+
+	yesterdayList = make([]int64, 0, 2)
+	yesterdayTime := currentTime.Add(-1 * time.Duration(time.Hour*24))
+	for i := 0; i <= 23; i++ {
+		dataTime := time.Date(yesterdayTime.Year(), yesterdayTime.Month(), yesterdayTime.Day(), i, 0, 0, 0, loc)
+		hourData, _ := appCounter.GetHourData(dataTime)
+		yesterdayList = append(yesterdayList, hourData)
+	}
+	return todayList, yesterdayList, nil
 }

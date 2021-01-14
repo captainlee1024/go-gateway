@@ -23,7 +23,6 @@ func HTTPFlowCountMiddleware() func(c *gin.Context) {
 
 		// 1. 全站
 		// 2. 服务统计
-		// 3. 租户流量统计
 		totalCounter, err := flowcount.FlowCounterHandler.GetCounter(public.FlowTotal)
 		if err != nil {
 			middleware.ResponseError(c, 4001, err)
@@ -45,14 +44,6 @@ func HTTPFlowCountMiddleware() func(c *gin.Context) {
 		dayServiceCount, _ := serviceCounter.GetDayData(time.Now())
 		fmt.Printf("serviceCOunter qps:%v, dayCount:%v", serviceCounter.QPS, dayServiceCount)
 
-		appCounter, err := flowcount.FlowCounterHandler.GetCounter(
-			public.FlowCountAppPrefix + serviceDetail.Info.ServiceName)
-		if err != nil {
-			middleware.ResponseError(c, 4001, err)
-			c.Abort()
-			return
-		}
-		appCounter.Increase()
 		c.Next()
 	}
 }

@@ -9,6 +9,10 @@ const (
 	// 验证相关 Key
 	CtxValidatorKey  = "ValidatorKey"
 	CtxTranslatorKey = "TranslatorKey"
+
+	// JWT
+	JWTSignKey = "my_sign_key"
+	JWTExpires = 60 * 60
 )
 
 // Context 之外的其他全局 Key
@@ -52,4 +56,5 @@ const (
 	FlowTotal          = "flow_total"
 	FlowServicePrefix  = "flow_service_"
 	FlowCountAppPrefix = "flow_app_"
+	FlowAppPrefix      = "flow_app_"
 )

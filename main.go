@@ -83,6 +83,7 @@ func main() {
 
 		// 加载服务信息到内存
 		po.ServiceManagerHandler.LoadOnce()
+		po.AppManagerHandler.LoadOnce()
 
 		// 注册路由，开启服务
 		// 这里替换成启动代理服务的方法

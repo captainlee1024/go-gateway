@@ -102,7 +102,7 @@ func (d *DashboardController) FlowStat(c *gin.Context) {
 
 	var yesterdayList []int64
 	yesterdayTime := currentTime.Add(-1 * time.Duration(time.Hour*24))
-	for i := 0; i <= currentTime.Hour(); i++ {
+	for i := 0; i <= 23; i++ {
 		dataTime := time.Date(yesterdayTime.Year(), yesterdayTime.Month(), yesterdayTime.Day(), i, 0, 0, 0, loc)
 		hourData, _ := totalCOunter.GetHourData(dataTime)
 		yesterdayList = append(yesterdayList, hourData)

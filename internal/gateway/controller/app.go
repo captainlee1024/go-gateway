@@ -8,8 +8,6 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/gateway/service"
 	"github.com/captainlee1024/go-gateway/internal/pkg/public"
 	"github.com/gin-gonic/gin"
-	"math/rand"
-	"time"
 )
 
 func AppRegister(group *gin.RouterGroup) {
@@ -208,15 +206,19 @@ func (a *AppController) AppStat(c *gin.Context) {
 	// 在实现代理的时候接入
 
 	var todayList []int64
-	for i := 0; i <= time.Now().Hour(); i++ {
-		todayList = append(todayList, int64(i*300))
-	}
+	//for i := 0; i <= time.Now().Hour(); i++ {
+	//	todayList = append(todayList, int64(i*300))
+	//}
 
 	var yesterdayList []int64
-	for i := 0; i <= 23; i++ {
-		yesterdayList = append(yesterdayList, int64(rand.Intn(10)*600))
+	//for i := 0; i <= 23; i++ {
+	//	yesterdayList = append(yesterdayList, int64(rand.Intn(10)*600))
+	//}
+	todayList, yesterdayList, err := a.useCase.AppStat(params.ID, c)
+	if err != nil {
+		middleware.ResponseError(c, 2009, err)
+		return
 	}
-
 	middleware.ResponseSuccess(c, &dto.AppStatOutput{
 		Today:     todayList,
 		Yesterday: yesterdayList,
