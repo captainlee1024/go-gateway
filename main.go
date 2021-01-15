@@ -7,6 +7,7 @@ import (
 	"github.com/captainlee1024/go-gateway/internal/proxy_service/http_proxy_router"
 	"github.com/captainlee1024/go-gateway/internal/proxy_service/po"
 	proxy "github.com/captainlee1024/go-gateway/internal/proxy_service/settings"
+	"github.com/captainlee1024/go-gateway/internal/proxy_service/tcp_proxy_router"
 	"os"
 	"os/signal"
 	"syscall"
@@ -93,6 +94,9 @@ func main() {
 		go func() {
 			http_proxy_router.HttpsServerRun()
 		}()
+		go func() {
+			tcp_proxy_router.TCPServerRun()
+		}()
 
 		// 等待中断信号来优雅关闭服务器，为关闭服务器操作设置一个5秒的延时
 		quit := make(chan os.Signal, 1)
@@ -104,6 +108,7 @@ func main() {
 		<-quit
 
 		// 收到信号，开始平滑下线
+		tcp_proxy_router.TCPServerStop()
 		http_proxy_router.HttpServerStop()
 		http_proxy_router.HttpsServerStop()
 	}

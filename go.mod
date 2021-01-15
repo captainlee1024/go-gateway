@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/bwmarrin/snowflake v0.3.0
+	github.com/captainlee1024/gateway-demo v0.0.0-20210114143055-e37f9b86ae51
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/garyburd/redigo v1.6.2
@@ -24,6 +25,6 @@ require (
 	github.com/swaggo/gin-swagger v1.3.0
 	github.com/swaggo/swag v1.7.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )

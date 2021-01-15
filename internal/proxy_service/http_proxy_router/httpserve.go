@@ -35,22 +35,22 @@ func HttpServerRun() {
 }
 
 func HttpServerStop() {
-	shoutdownTrace := mylog.NewTrace()
-	mylog.Log.Info("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Shoutdown Server ...",
+	shutdownTrace := mylog.NewTrace()
+	mylog.Log.Info("Shutdown", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		"msg": fmt.Sprintf("Shutdown httpServer%s", HttpSrvHandler.Addr),
 	})
 
 	// 创建一个 5 秒超时的 context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	if err := HttpSrvHandler.Shutdown(ctx); err != nil {
-		mylog.Log.Fatal("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		mylog.Log.Fatal("Shutdown", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
 			"error": err,
 		})
 	}
 
-	mylog.Log.Info("Server exiting", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Server exiting",
+	mylog.Log.Info("Server exiting", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		"msg": fmt.Sprintf("httpServer%s exiting", HttpSrvHandler.Addr),
 	})
 }
 
@@ -75,21 +75,21 @@ func HttpsServerRun() {
 }
 
 func HttpsServerStop() {
-	shoutdownTrace := mylog.NewTrace()
-	mylog.Log.Info("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Shoutdown Server ...",
+	shutdownTrace := mylog.NewTrace()
+	mylog.Log.Info("Shutdown", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		"msg": fmt.Sprintf("Shutdown httpServer%s", HttpsSrvHandler.Addr),
 	})
 
 	// 创建一个 5 秒超时的 context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	if err := HttpsSrvHandler.Shutdown(ctx); err != nil {
-		mylog.Log.Fatal("Shoutdown", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		mylog.Log.Fatal("Shutdown", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
 			"error": err,
 		})
 	}
 
-	mylog.Log.Info("Server exiting", shoutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": "Server exiting",
+	mylog.Log.Info("Server exiting", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
+		"msg": fmt.Sprintf("httpServer%s exiting", HttpsSrvHandler.Addr),
 	})
 }

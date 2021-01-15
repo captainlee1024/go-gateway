@@ -83,9 +83,15 @@ func (lbr *LoadBalancer) GetLoadBalancer(service *ServiceDetail) (loadbalance.Lo
 		}
 	}
 
-	schema := "http" // 默认 http
-	if service.HTTPRule.NeedHTTPs == 1 {
-		schema = "https" // 如果开启 https 支持，设置协议为 https
+	schema := "http://" // 默认 http
+	if service.Info.LoadType == public.LoadTypeHTTP {
+		if service.HTTPRule.NeedHTTPs == 1 {
+			schema = "https://" // 如果开启 https 支持，设置协议为 https
+		}
+	}
+
+	if service.Info.LoadType == public.LoadTypeTCP || service.Info.LoadType == public.LoadTypeGRPC {
+		schema = ""
 	}
 
 	//prefix := ""
@@ -101,7 +107,7 @@ func (lbr *LoadBalancer) GetLoadBalancer(service *ServiceDetail) (loadbalance.Lo
 	mConf, err := loadbalance.NewCheckConf(
 		// 基于 http rule 设置 schema 和接入类型
 		// 负载的 IP和权重
-		fmt.Sprintf("%s://%s", schema, "%s"), ipConf)
+		fmt.Sprintf("%s%s", schema, "%s"), ipConf)
 	// nil)
 	if err != nil {
 		return nil, err

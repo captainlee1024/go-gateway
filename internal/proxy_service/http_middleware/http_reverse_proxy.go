@@ -22,11 +22,15 @@ func HTTPReverseProxyMiddleware() func(c *gin.Context) {
 		lb, err := po.LoadBalancerHandler.GetLoadBalancer(serviceDetail)
 		if err != nil {
 			middleware.ResponseError(c, 2002, err)
+			c.Abort()
+			return
 		}
 
 		transport, err := po.TransportHandler.GetTransport(serviceDetail)
 		if err != nil {
 			middleware.ResponseError(c, 2003, err)
+			c.Abort()
+			return
 		}
 		// 创建 reverseProxy
 		fmt.Println("\n===>proxy")

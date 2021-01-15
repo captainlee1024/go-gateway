@@ -54,6 +54,28 @@ func NewServiceManager() *ServiceManager {
 	}
 }
 
+func (s *ServiceManager) GetTCPServiceList() []*ServiceDetail {
+	list := make([]*ServiceDetail, 0, 2)
+	for _, serviceItem := range s.ServiceSlice {
+		tempItem := serviceItem
+		if tempItem.Info.LoadType == public.LoadTypeTCP {
+			list = append(list, tempItem)
+		}
+	}
+	return list
+}
+
+func (s *ServiceManager) GetGRPCServiceList() []*ServiceDetail {
+	var list []*ServiceDetail
+	for _, serviceItem := range s.ServiceSlice {
+		tempItem := serviceItem
+		if tempItem.Info.LoadType == public.LoadTypeGRPC {
+			list = append(list, tempItem)
+		}
+	}
+	return list
+}
+
 // HTTPAccessMode 匹配接入
 func (s *ServiceManager) HTTPAccessMode(c *gin.Context) (*ServiceDetail, error) {
 	// 1. 前缀匹配 /abc -> serviceSlice.rule
