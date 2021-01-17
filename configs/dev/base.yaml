@@ -1,7 +1,8 @@
 # 程序基本信息
 name: "go-gateway" # 程序名称
 version: "v0.1" # 版本号
-mode: "dev" # 程序运行的模式，这里是开发模式
+#mode: "dev" # 程序运行的模式，这里是开发模式
+mode: "release" # 程序运行的模式，这里是线上
 start_time: "2020-12-15"
 time_location: "Asia/Shanghai"
 machine_id: 1

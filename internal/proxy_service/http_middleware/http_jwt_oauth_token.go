@@ -47,5 +47,6 @@ func HTTPJWTOauthTokenMiddleware() func(c *gin.Context) {
 			c.Abort()
 			return
 		}
+		c.Next()
 	}
 }

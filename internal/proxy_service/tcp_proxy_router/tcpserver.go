@@ -32,8 +32,8 @@ func TCPServerRun() {
 
 		go func(serviceDetail *po.ServiceDetail) {
 
-			fmt.Printf("\n\n%#v%#v%#v%#v\n\n", serviceDetail.Info, serviceDetail.TCPRule,
-				serviceDetail.LoadBalance, serviceDetail.AccessControl)
+			//fmt.Printf("\n\n%#v%#v%#v%#v\n\n", serviceDetail.Info, serviceDetail.TCPRule,
+			//	serviceDetail.LoadBalance, serviceDetail.AccessControl)
 			// 基于 thrift 代理测试 tcp 中间件
 			rb, err := po.LoadBalancerHandler.GetLoadBalancer(serviceDetail)
 			if err != nil {
