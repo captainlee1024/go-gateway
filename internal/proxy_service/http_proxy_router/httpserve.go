@@ -65,7 +65,7 @@ func HttpsServerRun() {
 		MaxHeaderBytes: 1 << uint(settings.ConfProxy.HttpsConfig.MaxHeaderBytes),
 	}
 
-	fmt.Printf("[INFO] http_proxy_run:%d\n", settings.ConfProxy.HttpsConfig.HTTPSPort)
+	fmt.Printf("[INFO] https_proxy_run:%d\n", settings.ConfProxy.HttpsConfig.HTTPSPort)
 	if err := HttpsSrvHandler.ListenAndServeTLS(cert_file.Path("server.crt"),
 		cert_file.Path("server.key")); err != nil && err != http.ErrServerClosed {
 		mylog.Log.Fatal("listen", mylog.NewTrace(), mylog.DLTagUndefind, map[string]interface{}{
@@ -77,7 +77,7 @@ func HttpsServerRun() {
 func HttpsServerStop() {
 	shutdownTrace := mylog.NewTrace()
 	mylog.Log.Info("Shutdown", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": fmt.Sprintf("Shutdown httpServer%s", HttpsSrvHandler.Addr),
+		"msg": fmt.Sprintf("Shutdown httpsServer%s", HttpsSrvHandler.Addr),
 	})
 
 	// 创建一个 5 秒超时的 context
@@ -90,6 +90,6 @@ func HttpsServerStop() {
 	}
 
 	mylog.Log.Info("Server exiting", shutdownTrace, mylog.DLTagUndefind, map[string]interface{}{
-		"msg": fmt.Sprintf("httpServer%s exiting", HttpsSrvHandler.Addr),
+		"msg": fmt.Sprintf("httpsServer%s exiting", HttpsSrvHandler.Addr),
 	})
 }
