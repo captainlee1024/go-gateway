@@ -33,7 +33,7 @@ func NewDashboardController(useCase *service.DashboardUseCase) *DashboardControl
 	return &DashboardController{useCase: useCase}
 }
 
-// AppStat godoc
+// PanelGroupData godoc
 // @Summary 指标统计
 // @Description 指标统计
 // @Tags 首页大盘
@@ -115,7 +115,7 @@ func (d *DashboardController) FlowStat(c *gin.Context) {
 	middleware.ResponseSuccess(c, outPut)
 }
 
-// FlowStat godoc
+// DashboardServiceStat godoc
 // @Summary 服务占比统计
 // @Description 服务占比统计
 // @Tags 首页大盘
